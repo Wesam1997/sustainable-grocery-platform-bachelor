@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <style>
+        body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+        }
+        h1 {
+        text-align: center;
+        }
+        form {
+        max-width: 400px;
+        margin: auto;
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        label {
+        display: block;
+        margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        input[type="email"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        }
+
+          input[type="text"],
+        input[type="Tefonnummer"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        }
+        button {
+        width: 100%;
+        padding: 10px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        }
+        button:hover {
+        background-color: #218838;
+        }
+        /* FOOTER */
+    footer{ position:sticky; bottom:0; background:#fff; border-top:1px solid var(--border) }
+    .bottombar{
+      max-width:1100px; margin:0 auto; padding:10px 16px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .slot{ flex:1 }
+    .slot.center{ text-align:center }
+    .slot.right{ text-align:right }
+
+    .pill-link{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 14px; border-radius:999px; border:1px solid var(--border);
+      background:#fff; text-decoration:none; color:inherit;
+    }
+    .pill-link:hover{ background:#f3f4f6 }
+
+    /* ønskeliste */
+    .wishlist-pill{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:10px 16px; border-radius:14px; font-weight:800;
+      background:#e6f4ec; color:#065f46; border:1px solid #bbf7d0;
+      text-decoration:none; box-shadow:var(--shadow);
+    }
+    .wishlist-pill:hover{ background:#dff0e6 }
+
+    /* home knap (som i dit billede) */
+    .home-btn {
+      display:grid;
+      place-items:center;
+      width:44px;
+      height:44px;
+      background:#111; /* sort baggrund */
+      color:#fff;      /* hvidt ikon */
+      border-radius:12px;
+      border:2px solid #fff; /* hvid kant */
+      text-decoration:none;
+      box-shadow:0 6px 16px rgba(0,0,0,.2);
+      font-size:20px;
+    }
+    .home-btn:hover {
+      filter:brightness(1.1);
+    }
+
+    @media (max-width:700px){
+      .filter-panel{ left:0; right:auto; width:min(92vw, 360px) }
+      .search-bar{ width:92% }
+    }
+
+     header{ position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border); }
+    .topbar{ max-width:1100px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand{font-weight:800;font-size:20px}
+    .avatar{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:#111;color:#fff}
+    .avatar a{color:#fff; text-decoration:none; display:grid; place-items:center; width:100%; height:100%}
+        
+
+    </style>
+
+      <header>
+    <div class="topbar">
+      <div class="brand">Flash Food</div>
+      <div style="flex:1"></div>
+      <div class="avatar" aria-label="Profil">
+        <a href="../profil/profil.html" title="Gå til profil">👤</a>
+      </div>
+    </div>
+  </header>
+    
+   <h1>Personlig Oplysinger</h1> 
+    <form action="#" method="get">
+          <label for="fornavn">Fornavn:</label>
+          <input type="text" id="fornavn" name="fornavn" >
+    
+          <label for="efternavn">Efternavn:</label>
+          <input type="text" id="efternavn" name="efternavn" >
+    
+          <label for="email">E-mail:</label>
+          <input type="email" id="email" name="email" >
+
+          <label for="Telfonnummer">Telfonnummer:</label>
+          <input type="Tefonnummer" id="Telfonnummer" name="Telfonnummer" >
+    
+           <button type="submit">Gem ændringer</button> 
+
+
+
+        </form>
+
+        <footer>
+    <nav class="bottombar" aria-label="Bundnavigation">
+      <div class="slot left">
+        <a class="home-btn" href="../Home/home.html" aria-label="Gå til forside">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/>
+          </svg>
+        </a>
+      </div>
+      <div class="slot center">
+        <a class="wishlist-pill" href="../Home/wishlist.html">❤️ Min ønskeliste</a>
+      </div>
+      <div class="slot right">
+        <a class="pill-link" href="kurv.html" aria-label="Kurv">🛒 Kurv</a>
+      </div>
+    </nav>
+  </footer>
+
+</body>
+</html>
