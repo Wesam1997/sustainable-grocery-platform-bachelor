@@ -1068,7 +1068,7 @@ $productSections = [
                                     <?php
                                     $sig = is_array($row['_sig'] ?? null)
                                         ? $row['_sig']
-                                        : [];
+                                         : [];
                                     $co2Signal = is_array($sig['co2'] ?? null)
                                         ? $sig['co2']
                                         : [];
