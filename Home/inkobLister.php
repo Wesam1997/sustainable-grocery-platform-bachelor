@@ -1,61 +1,17 @@
 <?php
 session_start();
-
-$cart = $_SESSION['cart'] ?? [];
-
-// Remove an item
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['remove_id'])) {
-    $rid = (int) $_POST['remove_id'];
-
-    if (isset($cart[$rid])) {
-        unset($cart[$rid]);
-        $_SESSION['cart'] = $cart;
-    }
-
-    header('Location: inkobLister.php');
-    exit;
+require_once __DIR__ . '/../src/bootstrap.php';
+// These operations only need session storage, not a database connection.
+$cartService = new CartService(null, new SessionBasketStore());
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['remove_id'])) $cartService->remove((int)$_POST['remove_id']);
+    elseif (isset($_POST['update_id'], $_POST['qty'])) $cartService->update((int)$_POST['update_id'], max(0, (int)$_POST['qty']));
+    elseif (($_POST['action'] ?? '') === 'clear') $cartService->clear();
+    header('Location: inkobLister.php'); exit;
 }
-
-// Update quantity
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && isset($_POST['update_id'], $_POST['qty'])
-) {
-    $uid = (int) $_POST['update_id'];
-    $qty = max(0, (int) $_POST['qty']);
-
-    if ($qty === 0) {
-        unset($cart[$uid]);
-    } elseif (isset($cart[$uid])) {
-        $cart[$uid]['qty'] = $qty;
-    }
-
-    $_SESSION['cart'] = $cart;
-
-    header('Location: inkobLister.php');
-    exit;
-}
-
-// Clear the cart
-if (
-    $_SERVER['REQUEST_METHOD'] === 'POST'
-    && ($_POST['action'] ?? '') === 'clear'
-) {
-    unset($_SESSION['cart']);
-
-    header('Location: inkobLister.php');
-    exit;
-}
-
-// Calculate totals
-$cart = $_SESSION['cart'] ?? [];
-$total = 0.0;
-$count = 0;
-
-foreach ($cart as $item) {
-    $total += $item['price'] * $item['qty'];
-    $count += (int) $item['qty'];
-}
+$cart = $cartService->items();
+$total = $cartService->total();
+$count = $cartService->count();
 ?>
 <!doctype html>
 <html lang="en">

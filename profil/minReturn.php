@@ -185,10 +185,10 @@
         </a>
       </div>
       <div class="slot center">
-        <a class="wishlist-pill" href="../Home/wishlist.html">❤️ Min ønskeliste</a>
+        <a class="wishlist-pill" href="../Home/fav.php">❤️ Min ønskeliste</a>
       </div>
       <div class="slot right">
-        <a class="pill-link" href="../Home/kurv.html" aria-label="Kurv">🛒 Kurv</a>
+        <a class="pill-link" href="../Home/inkobLister.php" aria-label="Kurv">🛒 Kurv</a>
       </div>
     </nav>
   </footer>

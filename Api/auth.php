@@ -53,20 +53,7 @@ function currentUser(): ?array
         return null;
     }
 
-    $stmt = mysqli_prepare(
-        $conn,
-        'SELECT id, name, email, role FROM users WHERE id = ? LIMIT 1'
-    );
-
-    mysqli_stmt_bind_param($stmt, 'i', $id);
-    mysqli_stmt_execute($stmt);
-
-    $result = mysqli_stmt_get_result($stmt);
-    $user = mysqli_fetch_assoc($result);
-
-    mysqli_stmt_close($stmt);
-
-    return $user ?: null;
+    return flashfood_application($conn)->users()->current($id);
 }
 
 function requireLogin(): array

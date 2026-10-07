@@ -51,44 +51,10 @@ try {
         exit;
     }
 
-    $related_stmt = mysqli_prepare(
-        $conn,
-        catalog_select_sql()
-        . ' WHERE p.merchant = ?'
-        . ' AND p.id != ?'
-        . ' ORDER BY p.id'
-        . ' LIMIT 4'
+    $related_products = array_map(
+        'product_details_payload',
+        flashfood_application($conn)->products()->related((string)$product['merchant'], $product_id)
     );
-
-    if (!$related_stmt) {
-        throw new RuntimeException(
-            'Related product query could not be prepared.'
-        );
-    }
-
-    mysqli_stmt_bind_param(
-        $related_stmt,
-        'si',
-        $product['merchant'],
-        $product_id
-    );
-
-    if (!mysqli_stmt_execute($related_stmt)) {
-        mysqli_stmt_close($related_stmt);
-
-        throw new RuntimeException(
-            'Related product query failed.'
-        );
-    }
-
-    $related_result = mysqli_stmt_get_result($related_stmt);
-    $related_products = [];
-
-    while ($row = mysqli_fetch_assoc($related_result)) {
-        $related_products[] = product_details_payload($row);
-    }
-
-    mysqli_stmt_close($related_stmt);
 
     echo json_encode([
         'success' => true,
@@ -100,7 +66,7 @@ try {
     );
 
 } catch (Throwable $error) {
-    error_log('Product details failed: ' . $error->getMessage());
+    (new SystemLogger())->error('products.details_failed', ['type' => get_class($error)]);
 
     http_response_code(500);
 

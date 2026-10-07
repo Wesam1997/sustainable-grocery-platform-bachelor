@@ -26,42 +26,17 @@ function esc($value): string
 $_SESSION['create_product_csrf'] ??= bin2hex(random_bytes(32));
 
 /* Genbrug eksisterende kombinationer af butik og kategori. */
-$sellers = [];
-
-$result = mysqli_query(
-    $conn,
-    "SELECT merchant, category
-     FROM flashfoodcart.proudkt
-     GROUP BY merchant, category
-     ORDER BY merchant, category"
-);
-
-while ($row = mysqli_fetch_assoc($result)) {
-    $row['is_meal'] = is_restaurant_product($row);
-    $sellers[] = $row;
-}
-
-/* Fødevarer, der har en anvendelig klimaværdi. */
-$foods = [];
-
-$result = mysqli_query(
-    $conn,
-    "SELECT agb_code, product_name_en, co2e_kg_per_kg
-     FROM flashfoodcart.environmental_food_data
-     WHERE co2e_kg_per_kg >= 0
-     ORDER BY product_name_en"
-);
-
-while ($row = mysqli_fetch_assoc($result)) {
-    $foods[(string)$row['agb_code']] = $row;
-}
+$administration = flashfood_application($conn)->administration();
+$sellers = $administration->sellers();
+foreach ($sellers as &$sellerRow) $sellerRow['is_meal'] = is_restaurant_product($sellerRow);
+unset($sellerRow);
+$foods = $administration->climateFoods();
 
 $error = '';
 $successId = $_SESSION['created_product_id'] ?? null;
 unset($_SESSION['created_product_id']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $inTransaction = false;
 
     try {
         $token = $_POST['csrf'] ?? '';
@@ -202,94 +177,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             );
         }
 
-        mysqli_begin_transaction($conn);
-        $inTransaction = true;
-
-        $stmt = mysqli_prepare(
-            $conn,
-            "INSERT INTO flashfoodcart.proudkt
-                (title, merchant, category, ingredients,
-                 image, price, expires_at, agb_code)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-        );
-
-        mysqli_stmt_bind_param(
-            $stmt,
-            'ssissdss',
-            $title,
-            $merchant,
-            $category,
-            $ingredients,
-            $image,
-            $price,
-            $expiresAt,
-            $agbCode
-        );
-
-        mysqli_stmt_execute($stmt);
-        $productId = mysqli_insert_id($conn);
-        mysqli_stmt_close($stmt);
-
-        if ($isMeal) {
-            $stmt = mysqli_prepare(
-                $conn,
-                "INSERT INTO flashfoodcart.product_recipe_ingredients
-                    (product_id, ingredient_key, ingredient_name,
-                     weight_g, agb_code, is_assumed)
-                 VALUES (?, ?, ?, ?, ?, ?)"
-            );
-
-            foreach ($recipe as $index => $ingredient) {
-                $ingredientKey = 'ingredient_' . ($index + 1);
-
-                /* Tabellen tillader 150 tegn til ingrediensnavnet. */
-                $ingredientName = mb_substr(
-                    $ingredient['name'],
-                    0,
-                    150
-                );
-
-                $weight = $ingredient['weight'];
-                $code = $ingredient['code'];
-
-                mysqli_stmt_bind_param(
-                    $stmt,
-                    'issdsi',
-                    $productId,
-                    $ingredientKey,
-                    $ingredientName,
-                    $weight,
-                    $code,
-                    $isAssumed
-                );
-
-                mysqli_stmt_execute($stmt);
-            }
-
-            mysqli_stmt_close($stmt);
-        }
-
-        mysqli_commit($conn);
-        $inTransaction = false;
+        $productId = $administration->create([
+            'title' => $title, 'merchant' => $merchant, 'category' => $category,
+            'ingredients' => $ingredients, 'image' => $image, 'price' => $price,
+            'expires_at' => $expiresAt, 'agb_code' => $agbCode
+        ], $recipe, (int)($isAssumed ?? 0));
 
         $_SESSION['created_product_id'] = $productId;
 
-        header('Location: tilfoej_produkt.php');
+        header('Location: add_proudukt.php');
         exit;
 
     } catch (InvalidArgumentException $exception) {
-        if ($inTransaction) {
-            mysqli_rollback($conn);
-        }
 
         $error = $exception->getMessage();
 
     } catch (Throwable $exception) {
-        if ($inTransaction) {
-            mysqli_rollback($conn);
-        }
 
-        error_log('Product creation failed: ' . $exception->getMessage());
+        (new SystemLogger())->error('products.creation_failed', ['type' => get_class($exception)]);
 
         $error = 'Produktet kunne ikke gemmes. Se PHP-fejlloggen.';
     }
@@ -393,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($successId): ?>
         <div class="message success" role="status">
             Produktet og dets CO₂-kobling er gemt.
-            <a href="produkt.php?id=<?= (int)$successId ?>">
+            <a href="product.php?id=<?= (int)$successId ?>">
                 Se produktet
             </a>
         </div>

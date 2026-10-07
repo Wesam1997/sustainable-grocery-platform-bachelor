@@ -8,27 +8,18 @@ if ($id) {
         require_once __DIR__ . '/../Api/connect.php';
         require_once __DIR__ . '/../Api/catalog.php';
         require_once __DIR__ . '/../Api/climate_metrics.php';
-        $catalogItems = get_catalog_items($conn, ['type' => 'all']);
-        foreach ($catalogItems as $row) {
-            if ((int)$row['id'] !== $id) continue;
-            $sig = is_array($row['_sig'] ?? null) ? $row['_sig'] : [];
-            $co2 = is_array($sig['co2'] ?? null) ? $sig['co2'] : [];
-            $rank = (int)($co2['rank'] ?? 0);
+        $row = get_catalog_product($conn, $id);
+        if ($row !== null) {
+            $sig = $row['_sig'];
+            $rank = (int)$sig['co2']['rank'];
             $climatePayload = climate_metrics($row, $sig, $rank);
-            $climatePayload['product_id'] = $id;
-            $climatePayload['className'] = match ($rank) {
-                1 => 'low', 2 => 'medium', 3 => 'high', default => 'unknown'
-            };
             $climatePayload['label'] = match ($rank) {
-                1 => 'Lower climate impact',
-                2 => 'Medium climate impact',
-                3 => 'Higher climate impact',
-                default => 'Climate impact'
+                1 => 'Lower climate impact', 2 => 'Medium climate impact',
+                3 => 'Higher climate impact', default => 'Climate impact'
             };
-            break;
         }
     } catch (Throwable $error) {
-        error_log('Product climate lookup failed: ' . $error->getMessage());
+        (new SystemLogger())->error('products.climate_failed', ['type' => get_class($error)]);
     }
 }
 ?>
@@ -40,7 +31,9 @@ if ($id) {
     <title>Product details – Flash Food</title>
     <link rel="stylesheet" href="../Style/produktdetalej.css?v=20260915-climate">
     <script id="productClimateData" type="application/json"><?= json_encode($climatePayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
-    <script src="../Js/productDetails.js?v=20260915-climate" defer></script>
+    <script src="../Js/productDetails.js?v=20261008-fixes" defer></script>
+    <script src="../Js/addToCartScript.js" defer></script>
+    <script src="../Js/AddToFav.js" defer></script>
 </head>
 <body>
 <main class="product-page">
@@ -54,7 +47,10 @@ if ($id) {
         <div class="product-information">
             <div class="product-heading">
                 <div><h1 id="productTitle"></h1><p id="productMerchant"></p></div>
-                <button class="favourite-button" type="button" aria-label="Add product to wishlist">♡</button>
+                <form class="add-to-fav" action="../Api/AddFav.php" method="post">
+                    <input id="favoriteProductId" type="hidden" name="product_id">
+                    <button class="favourite-button" type="submit" aria-label="Add product to wishlist">♡</button>
+                </form>
             </div>
             <p id="productPrice" class="product-price"></p>
             <section id="climateBox" class="climate-box unknown" aria-labelledby="climateLabel">
@@ -77,7 +73,7 @@ if ($id) {
                 <div><dt>Pack size</dt><dd id="productSize"></dd></div>
                 <div><dt>Category</dt><dd id="productCategory"></dd></div>
             </dl>
-            <form class="cart-form" action="../Api/add_to_cart.php" method="post">
+            <form class="cart-form add-to-cart" action="../Api/add_to_cart.php" method="post">
                 <input id="productId" type="hidden" name="product_id">
                 <div class="quantity-picker">
                     <button id="decreaseQuantity" type="button" aria-label="Decrease quantity">−</button>
