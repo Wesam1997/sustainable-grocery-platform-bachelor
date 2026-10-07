@@ -39,7 +39,7 @@
         }
 
           input[type="text"],
-        input[type="Tefonnummer"] {
+        input[type="tel"] {
         width: calc(100% - 20px);
         padding: 10px;
         margin-bottom: 15px;
@@ -121,7 +121,7 @@
       <div class="brand">Flash Food</div>
       <div style="flex:1"></div>
       <div class="avatar" aria-label="Profil">
-        <a href="../profil/profil.html" title="Gå til profil">👤</a>
+        <a href="../profil/profil.php" title="Gå til profil">👤</a>
       </div>
     </div>
   </header>
@@ -138,7 +138,7 @@
           <input type="email" id="email" name="email" >
 
           <label for="Telfonnummer">Telfonnummer:</label>
-          <input type="Tefonnummer" id="Telfonnummer" name="Telfonnummer" >
+          <input type="tel" id="Telfonnummer" name="Telfonnummer" >
     
            <button type="submit">Gem ændringer</button> 
 
@@ -149,17 +149,17 @@
         <footer>
     <nav class="bottombar" aria-label="Bundnavigation">
       <div class="slot left">
-        <a class="home-btn" href="../Home/home.html" aria-label="Gå til forside">
+        <a class="home-btn" href="../Home/home.php" aria-label="Gå til forside">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3l9-8z"/>
           </svg>
         </a>
       </div>
       <div class="slot center">
-        <a class="wishlist-pill" href="../Home/wishlist.html">❤️ Min ønskeliste</a>
+        <a class="wishlist-pill" href="../Home/fav.php">❤️ Min ønskeliste</a>
       </div>
       <div class="slot right">
-        <a class="pill-link" href="kurv.html" aria-label="Kurv">🛒 Kurv</a>
+        <a class="pill-link" href="../Home/inkobLister.php" aria-label="Kurv">🛒 Kurv</a>
       </div>
     </nav>
   </footer>

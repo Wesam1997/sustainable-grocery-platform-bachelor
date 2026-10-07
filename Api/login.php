@@ -98,21 +98,7 @@ try {
         );
     }
 
-    $stmt = mysqli_prepare(
-        $conn,
-        'SELECT id, password_hash
-         FROM users
-         WHERE email = ?
-         LIMIT 1'
-    );
-
-    mysqli_stmt_bind_param($stmt, 's', $email);
-    mysqli_stmt_execute($stmt);
-
-    $result = mysqli_stmt_get_result($stmt);
-    $user = mysqli_fetch_assoc($result);
-
-    mysqli_stmt_close($stmt);
+    $user = flashfood_application($conn)->users()->findForLogin($email);
 
     // Brug kontoens ID, hvis den findes.
     // Det sikrer samme tæller for alternative stavemåder,
@@ -134,13 +120,7 @@ try {
         rejectLimitedLogin($accountWait);
     }
 
-    // En dummy-hash bruges ved ukendt e-mail, så vi stadig
-    // udfører password_verify(). Den giver aldrig adgang.
-    $dummyHash =
-        '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.';
-
-    $hash = $user ? $user['password_hash'] : $dummyHash;
-    $passwordMatches = password_verify($password, $hash);
+    $passwordMatches = flashfood_application($conn)->users()->passwordMatches($user, $password);
 
     if (!$user || !$passwordMatches) {
         loginResponse(
@@ -164,12 +144,7 @@ try {
 
     loginResponse(200, true, 'Du er nu logget ind.');
 } catch (Throwable $exception) {
-    error_log(
-        'Login error: '
-        . get_class($exception)
-        . ' code '
-        . $exception->getCode()
-    );
+    (new SystemLogger())->error('user.login_failed', ['type' => get_class($exception)]);
 
     loginResponse(
         500,

@@ -1,4 +1,5 @@
 <?php
-$conn = mysqli_connect('localhost','root','','flashfoodcart') or die('Connection Failed');
-mysqli_set_charset($conn, 'utf8mb4');
-?>
+declare(strict_types=1);
+
+require_once __DIR__ . '/../src/bootstrap.php';
+$conn = DatabaseConnection::open();

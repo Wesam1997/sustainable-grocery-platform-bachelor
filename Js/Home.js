@@ -1,147 +1,145 @@
-'use strict';
+(() => {
+    'use strict';
 
-document.addEventListener('DOMContentLoaded', () => {
-    setupDualRange({
-        containerId: 'priceRange',
-        minInputId: 'priceMin',
-        maxInputId: 'priceMax',
-        minLabelId: 'priceMinLabel',
-        maxLabelId: 'priceMaxLabel',
-        minimumDistance: 1
-    });
+    function setupDualRange(minId, maxId, minLabelId, maxLabelId, rangeId) {
+        const minInput = document.getElementById(minId);
+        const maxInput = document.getElementById(maxId);
+        const minLabel = document.getElementById(minLabelId);
+        const maxLabel = document.getElementById(maxLabelId);
+        const range = document.getElementById(rangeId);
+        if (!minInput || !maxInput || !minLabel || !maxLabel || !range) return;
+        if (range.dataset.flashRangeReady === 'true') return;
+        range.dataset.flashRangeReady = 'true';
 
-    setupDualRange({
-        containerId: 'weightRange',
-        minInputId: 'weightMin',
-        maxInputId: 'weightMax',
-        minLabelId: 'weightMinLabel',
-        maxLabelId: 'weightMaxLabel',
-        minimumDistance: 50
-    });
+        const absoluteMin = Number(minInput.min);
+        const absoluteMax = Number(maxInput.max);
+        const total = absoluteMax - absoluteMin;
 
-    initialiseFilterPanel();
-});
-
-/*
- * Produktbillede, navn og "See more" bruger links
- * i home.php. Navigationen kræver ikke JavaScript.
- */
-
-function setupDualRange(options) {
-    const container = document.getElementById(options.containerId);
-    const minInput = document.getElementById(options.minInputId);
-    const maxInput = document.getElementById(options.maxInputId);
-    const minLabel = document.getElementById(options.minLabelId);
-    const maxLabel = document.getElementById(options.maxLabelId);
-
-    if (
-        !container ||
-        !minInput ||
-        !maxInput ||
-        !minLabel ||
-        !maxLabel
-    ) {
-        return;
-    }
-
-    const lower = Number(minInput.min);
-    const upper = Number(minInput.max);
-
-    if (
-        !Number.isFinite(lower) ||
-        !Number.isFinite(upper) ||
-        upper <= lower
-    ) {
-        return;
-    }
-
-    const gap = Math.min(
-        options.minimumDistance,
-        upper - lower
-    );
-
-    function clamp(value, minimum, maximum) {
-        return Math.min(maximum, Math.max(minimum, value));
-    }
-
-    function update(changedInput = null) {
-        let low = clamp(
-            Number(minInput.value),
-            lower,
-            upper - gap
-        );
-
-        let high = clamp(
-            Number(maxInput.value),
-            lower + gap,
-            upper
-        );
-
-        if (high - low < gap) {
-            if (changedInput === maxInput) {
-                low = high - gap;
-            } else {
-                high = low + gap;
+        function update(changed) {
+            let min = Number(minInput.value);
+            let max = Number(maxInput.value);
+            if (min > max) {
+                if (changed === 'min') max = min;
+                else min = max;
             }
+            minInput.value = String(min);
+            maxInput.value = String(max);
+            const minPercent = total > 0 ? (min - absoluteMin) / total * 100 : 0;
+            const maxPercent = total > 0 ? (max - absoluteMin) / total * 100 : 0;
+            range.style.setProperty('--min-pos', `${minPercent}%`);
+            range.style.setProperty('--max-pos', `${maxPercent}%`);
+            minLabel.textContent = String(min);
+            maxLabel.textContent = String(max);
+            minInput.style.zIndex = minPercent > 70 ? '5' : '4';
+            maxInput.style.zIndex = minPercent > 70 ? '4' : '5';
         }
-
-        minInput.value = String(low);
-        maxInput.value = String(high);
-
-        const minPosition =
-            ((low - lower) / (upper - lower)) * 100;
-
-        const maxPosition =
-            ((high - lower) / (upper - lower)) * 100;
-
-        container.style.setProperty(
-            '--min-pos',
-            `${minPosition}%`
-        );
-
-        container.style.setProperty(
-            '--max-pos',
-            `${maxPosition}%`
-        );
-
-        minLabel.textContent = String(low);
-        maxLabel.textContent = String(high);
-
-        minInput.setAttribute('aria-valuetext', String(low));
-        maxInput.setAttribute('aria-valuetext', String(high));
+        minInput.addEventListener('input', () => update('min'));
+        maxInput.addEventListener('input', () => update('max'));
+        minInput.form?.addEventListener('reset', () => setTimeout(update, 0));
+        update();
     }
 
-    minInput.addEventListener('input', () => {
-        update(minInput);
-    });
+    function setupFilterIcon() {
+        const button = document.getElementById('home-filter-toggle');
+        const filter = document.getElementById('product-filters');
+        const sidebar = filter?.closest('.catalog-sidebar');
+        const layout = filter?.closest('.catalog-layout');
+        if (!button || !filter || !sidebar || !layout) return;
+        if (button.dataset.flashFilterReady === 'true') return;
+        button.dataset.flashFilterReady = 'true';
 
-    maxInput.addEventListener('input', () => {
-        update(maxInput);
-    });
-
-    update();
-}
-
-function initialiseFilterPanel() {
-    const filter = document.querySelector('.filter');
-
-    if (!filter) {
-        return;
+        function sync() {
+            sidebar.hidden = !filter.open;
+            layout.classList.toggle('filters-closed', !filter.open);
+            button.setAttribute('aria-expanded', String(filter.open));
+            button.setAttribute('aria-label', filter.open ? 'Hide filters' : 'Show filters');
+            button.title = filter.open ? 'Hide filters' : 'Show filters';
+        }
+        button.addEventListener('click', () => {
+            filter.open = !filter.open;
+            sync();
+        });
+        filter.addEventListener('toggle', sync);
+        document.addEventListener('keydown', event => {
+            if (event.key !== 'Escape' || !filter.open) return;
+            if (!sidebar.contains(document.activeElement) && document.activeElement !== button) return;
+            filter.open = false;
+            sync();
+            button.focus();
+        });
+        layout.classList.add('filters-enhanced');
+        sync();
     }
 
-    document.addEventListener('keydown', (event) => {
-        if (event.key !== 'Escape' || !filter.open) {
-            return;
-        }
+    function initialize() {
+        setupFilterIcon();
+        setupDualRange('priceMin', 'priceMax', 'priceMinLabel', 'priceMaxLabel', 'priceRange');
+        setupDualRange('weightMin', 'weightMax', 'weightMinLabel', 'weightMaxLabel', 'weightRange');
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize, { once: true });
+    } else {
+        initialize();
+    }
+})();
 
-        const focusWasInside = filter.contains(
-            document.activeElement
-        );
 
-        filter.open = false;
-
-        if (focusWasInside) {
-            filter.querySelector('summary')?.focus();
-        }
+(() => {
+    'use strict';
+    document.querySelectorAll('.home-add-to-cart').forEach(form => {
+        form.addEventListener('submit', async event => {
+            event.preventDefault();
+            if (form.dataset.busy === 'true') return;
+            const button = form.querySelector('button[type="submit"]');
+            const label = form.querySelector('.home-cart-button-label');
+            const message = form.querySelector('.home-cart-message');
+            form.dataset.busy = 'true';
+            button.disabled = true;
+            label.textContent = 'Adding…';
+            message.textContent = '';
+            delete message.dataset.state;
+            const body = new FormData(form);
+            body.set('ajax', '1');
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body,
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' }
+                });
+                const data = await response.json();
+                if (!response.ok || data.ok !== true) {
+                    throw new Error(data.message || data.error || 'Could not add the product. Please try again.');
+                }
+                const count = Number(data.count);
+                if (Number.isInteger(count) && count >= 0) {
+                    document.querySelectorAll('.cart-count').forEach(counter => {
+                        counter.textContent = String(count);
+                    });
+                }
+                message.dataset.state = 'success';
+                message.textContent = 'Added to cart.';
+                const icon = document.getElementById('cart-icon');
+                if (icon && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                    icon.animate([
+                        { transform: 'rotate(0deg)' },
+                        { transform: 'rotate(-12deg)' },
+                        { transform: 'rotate(12deg)' },
+                        { transform: 'rotate(0deg)' }
+                    ], { duration: 350 });
+                }
+            } catch (error) {
+                message.dataset.state = 'error';
+                message.textContent = error instanceof SyntaxError
+                    ? 'The server returned an unexpected response. Check your cart before trying again.'
+                    : (error instanceof TypeError
+                        ? 'Connection problem. Check your cart before trying again.'
+                        : error.message);
+            } finally {
+                form.dataset.busy = 'false';
+                button.disabled = false;
+                label.textContent = 'Add to cart';
+            }
+        });
     });
-}
+})();

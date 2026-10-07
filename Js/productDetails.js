@@ -32,6 +32,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const title = product.title || 'Product';
         document.title = `${title} – Flash Food`;
         $('productId').value = product.id;
+        $('favoriteProductId').value = product.id;
         $('productTitle').textContent = title;
         $('productMerchant').textContent = product.merchant || '';
         $('productPrice').textContent = formatPrice(product.price);
@@ -125,7 +126,7 @@ function renderClimate(climate, productId, getElement) {
         high: 'Higher climate impact', unknown: 'Climate impact'
     }[state];
     if (climate.available && Number.isFinite(climate.value) && climate.value >= 0
-        && ['per kg', 'per serving'].includes(climate.unit)) {
+        && ['per kg', 'per serving', 'per box'].includes(climate.unit)) {
         value.textContent = `${climate.value.toFixed(1)} kg CO₂e ${climate.unit}`;
         example.hidden = climate.is_example !== true;
     }

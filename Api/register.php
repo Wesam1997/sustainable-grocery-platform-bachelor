@@ -108,17 +108,7 @@ if ($retryAfter > 0) {
         respond(422, false, 'The passwords do not match.');
     }
 
-    $hash = password_hash($password, PASSWORD_BCRYPT);
-
-    $stmt = mysqli_prepare(
-        $conn,
-        "INSERT INTO users (name, email, password_hash, role)
-         VALUES (?, ?, ?, 'user')"
-    );
-
-    mysqli_stmt_bind_param($stmt, 'sss', $name, $email, $hash);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
+    flashfood_application($conn)->users()->register($name, $email, $password);
 
     respond(201, true, 'Your account has been created.');
 } catch (mysqli_sql_exception $exception) {
@@ -130,9 +120,9 @@ if ($retryAfter > 0) {
         );
     }
 
-    error_log('Registration database error: ' . $exception->getCode());
+    (new SystemLogger())->error('user.registration_failed', ['type' => get_class($exception)]);
     respond(500, false, 'Something went wrong. Please try again later.');
 } catch (Throwable $exception) {
-    error_log('Registration error type: ' . get_class($exception));
+    (new SystemLogger())->error('user.registration_failed', ['type' => get_class($exception)]);
     respond(500, false, 'Something went wrong. Please try again later.');
 }

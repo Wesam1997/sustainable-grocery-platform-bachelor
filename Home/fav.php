@@ -1,30 +1,15 @@
 <?php
 session_start();
-
-/* --- Handling: fjern enkelt og ryd alt --- */
+require_once __DIR__ . '/../src/bootstrap.php';
+$favoriteService = new FavoriteService(null, new SessionBasketStore());
+$cartService = new CartService(null, new SessionBasketStore());
 if (isset($_GET['action'])) {
-  if ($_GET['action'] === 'clear') {
-    unset($_SESSION['fav']);
-    header('Location: fav.php'); exit;
-  }
-  if ($_GET['action'] === 'remove' && isset($_GET['pid'])) {
-    $pid = (int) $_GET['pid'];
-    if ($pid > 0 && isset($_SESSION['fav'][$pid])) {
-      unset($_SESSION['fav'][$pid]);
-    }
-    header('Location: fav.php'); exit;
-  }
+    if ($_GET['action'] === 'clear') { $favoriteService->clear(); header('Location: fav.php'); exit; }
+    if ($_GET['action'] === 'remove' && isset($_GET['pid'])) { $favoriteService->remove((int)$_GET['pid']); header('Location: fav.php'); exit; }
 }
-
-/* --- Data --- */
-$fav       = $_SESSION['fav'] ?? [];
+$fav = $favoriteService->items();
 $fav_count = count($fav);
-
-/* kurv-tæller (vises i footer og opdateres også via JS når man lægger i kurv) */
-$cart_count = 0;
-if (!empty($_SESSION['cart'])) {
-  foreach ($_SESSION['cart'] as $it) $cart_count += (int)$it['qty'];
-}
+$cart_count = $cartService->count();
 ?>
 <!doctype html>
 <html lang="da">
