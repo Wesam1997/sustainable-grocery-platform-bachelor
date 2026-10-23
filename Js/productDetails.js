@@ -55,13 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             $('imageUnavailable').hidden = false;
         }
 
-        let climate = null;
-        try {
-            climate = JSON.parse($('productClimateData')?.textContent || 'null');
-        } catch {
-            // Missing or invalid climate data must never produce a green default.
-        }
-        renderClimate(climate, productId, $);
+        renderClimate(product.climate || null, productId, $);
         showRelatedProducts(Array.isArray(data.relatedProducts) ? data.relatedProducts : []);
         $('statusMessage').hidden = true;
         $('productDetails').hidden = false;
@@ -114,20 +108,23 @@ function renderClimate(climate, productId, getElement) {
     const label = getElement('climateLabel');
     const value = getElement('climateValue');
     const example = getElement('climateExample');
+
     box.className = 'climate-box unknown';
-    label.textContent = 'Climate impact';
+    label.textContent = 'CO₂e emissions';
     value.textContent = 'Information not available';
     example.hidden = true;
-    if (!climate || Number(climate.product_id) !== Number(productId)) return;
-    const state = ['low', 'medium', 'high'].includes(climate.className) ? climate.className : 'unknown';
+
+    if (!climate || Number(climate.product_id) !== Number(productId) ||
+        climate.available !== true || !Number.isFinite(climate.value) ||
+        climate.value < 0 || !['per kg', 'per serving', 'per box'].includes(climate.unit)) return;
+
+    const state = ['low', 'medium', 'high'].includes(climate.className)
+        ? climate.className : 'unknown';
     box.className = `climate-box ${state}`;
     label.textContent = {
-        low: 'Lower climate impact', medium: 'Medium climate impact',
-        high: 'Higher climate impact', unknown: 'Climate impact'
+        low: 'Low CO₂e emissions', medium: 'Medium CO₂e emissions',
+        high: 'High CO₂e emissions', unknown: 'CO₂e emissions'
     }[state];
-    if (climate.available && Number.isFinite(climate.value) && climate.value >= 0
-        && ['per kg', 'per serving', 'per box'].includes(climate.unit)) {
-        value.textContent = `${climate.value.toFixed(1)} kg CO₂e ${climate.unit}`;
-        example.hidden = climate.is_example !== true;
-    }
+    value.textContent = `${climate.value.toFixed(1)} kg CO₂e ${climate.unit}`;
+    example.hidden = climate.is_example !== true;
 }

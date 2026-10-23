@@ -116,3 +116,106 @@ main > h2 ~ p {
         font-size: 30px;
     }
 }
+
+
+
+/* Short climate explanation on hover or keyboard focus. */
+.product-details {
+    overflow: visible;
+}
+
+.climate-box {
+    position: relative;
+    overflow: visible;
+}
+
+.climate-content {
+    min-width: 0;
+    flex: 1;
+}
+
+.climate-value-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.climate-help {
+    display: inline-flex;
+    flex-shrink: 0;
+}
+
+.climate-help-button {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    font-size: 23px;
+    cursor: help;
+}
+
+.climate-help-button:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.climate-tooltip {
+    position: absolute;
+    right: 0;
+    bottom: 100%;
+    z-index: 20;
+
+    width: min(300px, calc(100vw - 64px));
+    padding: 16px;
+
+    color: #17211a;
+    background: #ffffff;
+    border: 1px solid #e1e7e2;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.climate-tooltip::after {
+    content: "";
+    position: absolute;
+    right: 24px;
+    bottom: -6px;
+    width: 10px;
+    height: 10px;
+    background: #ffffff;
+    border-right: 1px solid #e1e7e2;
+    border-bottom: 1px solid #e1e7e2;
+    transform: rotate(45deg);
+}
+
+.climate-help:hover .climate-tooltip,
+.climate-help:focus-within .climate-tooltip {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.climate-box .climate-tooltip strong {
+    margin: 0 0 8px;
+    color: #17211a;
+    font-size: 15px;
+}
+
+.climate-box .climate-tooltip p {
+    margin: 0;
+    color: #566059;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.climate-box .climate-tooltip p + p {
+    margin-top: 6px;
+}

@@ -2,7 +2,9 @@
 session_start();
 require_once __DIR__ . '/../src/bootstrap.php';
 // These operations only need session storage, not a database connection.
-$cartService = new CartService(null, new SessionBasketStore());
+require_once __DIR__ . '/../Api/connect.php';
+
+$cartService = flashfood_application($conn)->cart();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['remove_id'])) $cartService->remove((int)$_POST['remove_id']);
     elseif (isset($_POST['update_id'], $_POST['qty'])) $cartService->update((int)$_POST['update_id'], max(0, (int)$_POST['qty']));

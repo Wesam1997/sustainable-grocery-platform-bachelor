@@ -3,7 +3,10 @@ declare(strict_types=1);
 
 final class MysqliProductRepository implements ProductRepositoryInterface
 {
-    public function __construct(private mysqli $connection) {}
+    public function __construct(
+        private mysqli $connection
+    ) {}
+
     public static function selectSql(): string
     {
         return "
@@ -21,8 +24,7 @@ final class MysqliProductRepository implements ProductRepositoryInterface
             FROM proudkt AS p
 
             LEFT JOIN environmental_food_data AS e
-                ON p.agb_code COLLATE utf8mb4_unicode_ci
-                 = e.agb_code COLLATE utf8mb4_unicode_ci
+                ON e.agb_code = p.agb_code
 
             LEFT JOIN (
                 SELECT
@@ -52,37 +54,43 @@ final class MysqliProductRepository implements ProductRepositoryInterface
 
                 FROM product_recipe_ingredients AS r
 
+                LEFT JOIN ingredients AS i
+                    ON i.id = r.ingredient_id
+
                 LEFT JOIN environmental_food_data AS d
-                    ON r.agb_code COLLATE utf8mb4_unicode_ci
-                     = d.agb_code COLLATE utf8mb4_unicode_ci
+                    ON d.agb_code = i.agb_code
 
                 GROUP BY r.product_id
             ) AS rc
                 ON rc.product_id = p.id
         ";
     }
-    private function buildWhere(
-        
-        array $filters
-    ): string {
+
+    private function buildWhere(array $filters): string
+    {
         $where = [];
 
-        if ($filters['type'] === 'restaurant') {
+        $type = $filters['type'] ?? '';
+        $search = (string) ($filters['q'] ?? '');
+        $minimumPrice = $filters['pmin'] ?? null;
+        $maximumPrice = $filters['pmax'] ?? null;
+
+        if ($type === 'restaurant') {
             $where[] =
                 'p.merchant IN ('
                 . $this->escapedList(RESTAURANTS)
                 . ')';
-        } elseif ($filters['type'] === 'market') {
+        } elseif ($type === 'market') {
             $where[] =
                 'p.merchant IN ('
                 . $this->escapedList(MARKETS)
                 . ')';
         }
 
-        if ($filters['q'] !== '') {
+        if ($search !== '') {
             $query = mysqli_real_escape_string(
                 $this->connection,
-                $filters['q']
+                $search
             );
 
             $where[] =
@@ -91,65 +99,116 @@ final class MysqliProductRepository implements ProductRepositoryInterface
                 . " OR p.ingredients LIKE '%$query%')";
         }
 
-        if ($filters['pmin'] !== null) {
-            $where[] =
-                'p.price >= '
-                . (float)$filters['pmin'];
+        if ($minimumPrice !== null) {
+            $where[] = 'p.price >= ' . (float) $minimumPrice;
         }
 
-        if ($filters['pmax'] !== null) {
-            $where[] =
-                'p.price <= '
-                . (float)$filters['pmax'];
+        if ($maximumPrice !== null) {
+            $where[] = 'p.price <= ' . (float) $maximumPrice;
         }
 
-        return $where
+        return $where !== []
             ? ' WHERE ' . implode(' AND ', $where)
             : '';
     }
-    private function escapedList(
-        
-        array $values
-    ): string {
+
+    private function escapedList(array $values): string
+    {
+        if ($values === []) {
+            return 'NULL';
+        }
+
         $escaped = array_map(
-            fn($value) => mysqli_real_escape_string(
+            fn ($value): string => mysqli_real_escape_string(
                 $this->connection,
-                $value
+                (string) $value
             ),
             $values
         );
 
         return "'" . implode("','", $escaped) . "'";
     }
-    private function query(string $sql, string $types = '', array $values = []): array
-    {
+
+    private function query(
+        string $sql,
+        string $types = '',
+        array $values = []
+    ): array {
         $stmt = $this->connection->prepare($sql);
-        if (!$stmt) throw new RuntimeException('Product query preparation failed.');
+
+        if (!$stmt) {
+            throw new RuntimeException(
+                'Product query preparation failed.'
+            );
+        }
+
         try {
-            if ($types !== '') $stmt->bind_param($types, ...$values);
-            if (!$stmt->execute()) throw new RuntimeException('Product query failed.');
+            if ($types !== '') {
+                $stmt->bind_param($types, ...$values);
+            }
+
+            if (!$stmt->execute()) {
+                throw new RuntimeException(
+                    'Product query failed.'
+                );
+            }
+
             return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        } finally { $stmt->close(); }
+        } finally {
+            $stmt->close();
+        }
     }
+
     public function find(int $id): ?array
     {
-        return $this->query(self::selectSql() . ' WHERE p.id = ? LIMIT 1', 'i', [$id])[0] ?? null;
+        $rows = $this->query(
+            self::selectSql() . ' WHERE p.id = ? LIMIT 1',
+            'i',
+            [$id]
+        );
+
+        return $rows[0] ?? null;
     }
+
     public function findBasic(int $id): ?array
     {
-        return $this->query('SELECT id, title, price FROM proudkt WHERE id = ? LIMIT 1', 'i', [$id])[0] ?? null;
+        $rows = $this->query(
+            'SELECT id, title, price
+             FROM proudkt
+             WHERE id = ?
+             LIMIT 1',
+            'i',
+            [$id]
+        );
+
+        return $rows[0] ?? null;
     }
+
     public function listFiltered(array $filters): array
     {
-        return $this->query(self::selectSql() . $this->buildWhere($filters) . ' ORDER BY p.id DESC');
+        return $this->query(
+            self::selectSql()
+            . $this->buildWhere($filters)
+            . ' ORDER BY p.id DESC'
+        );
     }
+
     public function related(string $merchant, int $id): array
     {
-        return $this->query(self::selectSql() . ' WHERE p.merchant = ? AND p.id != ? ORDER BY p.id LIMIT 4', 'si', [$merchant, $id]);
+        return $this->query(
+            self::selectSql()
+            . ' WHERE p.merchant = ?'
+            . ' AND p.id != ?'
+            . ' ORDER BY p.id LIMIT 4',
+            'si',
+            [$merchant, $id]
+        );
     }
+
     public function vocabularyRows(): array
     {
-        return $this->query('SELECT title, category, ingredients FROM proudkt');
+        return $this->query(
+            'SELECT title, category, ingredients FROM proudkt'
+        );
     }
 }
-

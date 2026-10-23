@@ -14,12 +14,12 @@ if ($id) {
             $rank = (int)$sig['co2']['rank'];
             $climatePayload = climate_metrics($row, $sig, $rank);
             $climatePayload['label'] = match ($rank) {
-                1 => 'Lower climate impact', 2 => 'Medium climate impact',
-                3 => 'Higher climate impact', default => 'Climate impact'
+                1 => 'Low CO₂e emissions', 2 => 'Medium CO₂e emissions',
+                3 => 'High CO₂e emissions', default => 'CO₂e emissions'
             };
         }
     } catch (Throwable $error) {
-        (new SystemLogger())->error('products.climate_failed', ['type' => get_class($error)]);
+        error_log('products.climate_failed: ' . get_class($error));
     }
 }
 ?>
@@ -31,7 +31,7 @@ if ($id) {
     <title>Product details – Flash Food</title>
     <link rel="stylesheet" href="../Style/produktdetalej.css?v=20260915-climate">
     <script id="productClimateData" type="application/json"><?= json_encode($climatePayload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?></script>
-    <script src="../Js/productDetails.js?v=20261008-fixes" defer></script>
+    <script src="../Js/productDetails.js?v=20261012-details" defer></script>
     <script src="../Js/addToCartScript.js" defer></script>
     <script src="../Js/AddToFav.js" defer></script>
 </head>
@@ -56,16 +56,9 @@ if ($id) {
             <section id="climateBox" class="climate-box unknown" aria-labelledby="climateLabel">
                 <span class="climate-icon" aria-hidden="true"></span>
                 <div>
-                    <strong id="climateLabel">Climate impact</strong>
+                    <strong id="climateLabel">CO₂e emissions</strong>
                     <p id="climateValue">Information not available</p>
                     <small id="climateExample" hidden>Example value</small>
-                </div>
-            </section>
-            <section class="co2-information">
-                <span class="information-icon" aria-hidden="true">i</span>
-                <div>
-                    <h2>About CO₂e</h2>
-                    <p>CO₂e measures the gases that warm our planet. Lower numbers mean less climate impact when the units and calculation methods match. Compare groceries per kg and meals per serving.</p>
                 </div>
             </section>
             <dl class="product-facts">

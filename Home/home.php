@@ -4,6 +4,8 @@ declare(strict_types=1);
 require_once __DIR__ . '/../Api/auth.php';
 require_once __DIR__ . '/../Api/catalog.php';
 require_once __DIR__ . '/../Api/climate_metrics.php';
+require_once __DIR__ . '/../Api/instant_comparisons.php';
+$instantComparisons = new FlashFoodInstantComparisons($conn);
 
 $loggedInUser = currentUser();
 
@@ -99,7 +101,7 @@ $productSections = [
     [
         'id' => 'supermarket-products',
         'title' => 'Supermarket products',
-        'description' => 'Groceries with lower, medium and higher climate impact.',
+        'description' => 'Groceries with low, medium and high CO₂e emissions.',
         'items' => $supermarketItems,
     ],
     [
@@ -136,11 +138,11 @@ $productSections = [
     ></script>
 
     <script
-        src="../Js/Home.js?v=home-complete-2"
+        src="../Js/Home.js?v=20261015-llm-hover"
         defer
     ></script>
-    
-    
+
+
 <style>
 /* Catalog and filter */
 .catalog-layout {
@@ -533,6 +535,34 @@ $productSections = [
 .home-cart-message[data-state="error"] { color: #a12323; }
 .home-cart-message[data-state="success"] { color: #246f36; }
 
+
+/* The climate help lives on Home product cards. */
+.home-climate-value { display: flex; align-items: center; gap: 8px; }
+.home-climate-help { display: inline-flex; flex-shrink: 0; }
+.home-climate-help-button {
+    display: grid; place-items: center; width: 32px; height: 32px;
+    padding: 0; border: 0; border-radius: 50%; background: transparent;
+    color: inherit; font: inherit; font-size: 23px; cursor: help;
+}
+.home-climate-help-button:hover { background: rgba(0, 0, 0, .06); }
+.home-climate-help-button:focus-visible { outline: 3px solid #246f36; outline-offset: 2px; }
+.home-climate-tooltip[hidden] { display: none !important; }
+.home-climate-tooltip {
+    position: fixed; z-index: 1000; box-sizing: border-box;
+    display: block; width: min(300px, calc(100vw - 32px)); padding: 16px;
+    border: 1px solid #e1e7e2; border-radius: 12px;
+    color: #17211a; background: #fff;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .14);
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    font-size: 14px; line-height: 1.5;
+}
+.home-climate-tooltip > strong { display: block; margin-bottom: 8px; font-size: 15px; }
+.home-climate-tooltip > span { display: block; color: #566059; }
+.home-climate-tooltip > span + span { margin-top: 6px; }
+.climate-summary:not(.low):not(.medium):not(.high) {
+    color: #475149; background: #f1f3f2; border-color: #dce2dd;
+}
+
 </style>
 </head>
 
@@ -559,7 +589,7 @@ $productSections = [
                 Home
             </a>
 
-    
+
             <a class="nav-link" href="#about">
                 About us
             </a>
@@ -607,17 +637,17 @@ $productSections = [
 <section class="hero">
     <div class="hero-content">
 
-       
+
         <h1>
             Shop smarter.
             <br>
             <span>Choose greener.</span>
         </h1>
 
-     
 
-    
-        
+
+
+
     </div>
 </section>
 
@@ -711,7 +741,7 @@ $productSections = [
                 Filters
             </summary>
 
-            
+
 
             <div class="filter-panel">
                 <form method="get" action="home.php">
@@ -893,7 +923,7 @@ $productSections = [
                     <!-- CLIMATE -->
                     <section class="filter-group">
                         <h4 class="group-title">
-                            Climate impact
+                            CO₂e emissions
                         </h4>
 
                         <label class="filter-row">
@@ -906,7 +936,7 @@ $productSections = [
 
                             <span class="impact-dot impact-low"></span>
                             <span class="impact-filter-copy">
-                                <strong>Lower climate impact</strong>
+                                <strong>Low CO₂e emissions</strong>
                                 <small>Up to <?= h((string)CO2_LOW_MAX) ?> kg CO₂e/kg (prototype category)</small>
                             </span>
                         </label>
@@ -921,7 +951,7 @@ $productSections = [
 
                             <span class="impact-dot impact-medium"></span>
                             <span class="impact-filter-copy">
-                                <strong>Medium climate impact</strong>
+                                <strong>Medium CO₂e emissions</strong>
                                 <small>Above <?= h((string)CO2_LOW_MAX) ?> and up to <?= h((string)CO2_MEDIUM_MAX) ?> kg CO₂e/kg (prototype category)</small>
                             </span>
                         </label>
@@ -936,7 +966,7 @@ $productSections = [
 
                             <span class="impact-dot impact-high"></span>
                             <span class="impact-filter-copy">
-                                <strong>Higher climate impact</strong>
+                                <strong>High CO₂e emissions</strong>
                                 <small>Above <?= h((string)CO2_MEDIUM_MAX) ?> kg CO₂e/kg (prototype category)</small>
                             </span>
                         </label>
@@ -1018,7 +1048,7 @@ $productSections = [
 
         <div class="section-heading">
             <div>
-                
+
             </div>
 
             <p class="result-count">
@@ -1027,7 +1057,7 @@ $productSections = [
             </p>
         </div>
 
-        
+
 
         <?php if (empty($items)): ?>
 
@@ -1078,10 +1108,10 @@ $productSections = [
                                     };
 
                                     $climateLabel = match ($rank) {
-                                        1 => 'Lower climate impact',
-                                        2 => 'Medium climate impact',
-                                        3 => 'Higher climate impact',
-                                        default => 'Climate impact'
+                                        1 => 'Low CO₂e emissions',
+                                        2 => 'Medium CO₂e emissions',
+                                        3 => 'High CO₂e emissions',
+                                        default => 'CO₂e emissions'
                                     };
 
                                     $dotClass = match ($rank) {
@@ -1092,6 +1122,8 @@ $productSections = [
                                     };
 
                                     $climate = climate_metrics($row, $sig, $rank);
+                                    $instantContext = $instantComparisons->context($climate, (int)$row['id']);
+                                    $instantText = $instantComparisons->read($instantContext)['text'];
 
                                     /* Link til netop dette produkt */
                                     $productUrl = 'product.php?id=' . (int)$row['id'];
@@ -1182,13 +1214,27 @@ $productSections = [
                                                     <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
-                                            <div class="climate-summary <?= h($co2Class) ?>" aria-label="Climate impact">
+                                            <div class="climate-summary <?= h($co2Class) ?>" aria-label="CO₂e emissions">
                                                 <span class="climate-label">
                                                     <span class="impact-dot <?= h($dotClass) ?>" aria-hidden="true"></span>
                                                     <?= h($climateLabel) ?>
                                                 </span>
                                                 <?php if ($climate['available']): ?>
-                                                    <strong><?= h($climate['formatted']) ?> kg CO₂e <span class="climate-unit"><?= h($climate['unit']) ?></span></strong>
+                                                    <div class="home-climate-value">
+                                                        <strong><?= h($climate['formatted']) ?> kg CO₂e <span class="climate-unit"><?= h($climate['unit']) ?></span></strong>
+                                                        <span class="home-climate-help">
+                                                            <button type="button" class="home-climate-help-button" data-product-id="<?= (int)$row['id'] ?>"
+                                                                aria-label="Explain CO₂e for <?= h($row['title']) ?>"
+                                                                aria-expanded="false"
+                                                                aria-describedby="<?= h('climate-tip-' . $section['id'] . '-' . (int)$row['id']) ?>">ⓘ</button>
+                                                                <span
+    class="home-climate-tooltip"
+    role="tooltip"
+    hidden
+    id="<?= h('climate-tip-' . $section['id'] . '-' . (int)$row['id']) ?>"
+><?= h($instantText) ?></span>
+                                                        </span>
+                                                    </div>
                                                     <?php if ($climate['is_example']): ?>
                                                         <small class="example-note">Example value</small>
                                                     <?php endif; ?>
@@ -1196,21 +1242,7 @@ $productSections = [
                                                     <small>Information not available</small>
                                                 <?php endif; ?>
                                             </div>
-                                            <a class="product-details-link" href="<?= h($productUrl) ?>" aria-label="See more about <?= h($row['title']) ?>">See more <span aria-hidden="true">→</span></a>
-                                            <form class="home-add-to-cart" action="../Api/add_to_cart.php" method="post">
-                                                <input type="hidden" name="product_id" value="<?= (int) $row['id'] ?>">
-                                                <input type="hidden" name="qty" value="1">
-                                                <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
-                                                <button class="apply-button" type="submit" aria-label="Add <?= h($row['title']) ?> to cart">
-                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                                        <path d="M3 3h2l3 12h11l2-8H6"/>
-                                                        <circle cx="9" cy="20" r="1"/>
-                                                        <circle cx="18" cy="20" r="1"/>
-                                                    </svg>
-                                                    <span class="home-cart-button-label">Add to cart</span>
-                                                </button>
-                                                <p class="home-cart-message" role="status" aria-live="polite" aria-atomic="true"></p>
-                                            </form>
+
                                         </div>
                                     </article>
 
