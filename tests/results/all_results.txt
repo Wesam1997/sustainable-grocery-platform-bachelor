@@ -1,0 +1,117 @@
+Flash Food - LLM Testing Results
+Date: 10/25/2026 00:20:31
+
+========== test_A1_llm_validation.php ==========
+PASS - Selected comparison key
+PASS - Exact numeric value
+PASS - Required unit
+PASS - Correct reference activity
+PASS - Correct product basis
+PASS - Climate impact meaning
+PASS - Reject unsupported claims
+PASS - Reject additional numbers
+Failures: 0
+
+Exit code: 0
+
+========== test_A1_real_validation.php ==========
+PASS - Valid explanation
+PASS - Wrong number
+PASS - Wrong unit
+PASS - Extra number
+PASS - Unsupported reduction claim
+PASS - Wrong subject
+Failures: 0
+
+Exit code: 0
+
+========== test_A2_llm_safety.php ==========
+php.exe : 
+At line:19 char:5
++     & C:\xampp\php\php.exe "test
+s\$test" 2>&1 |
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo          : Not 
+   Specified: (:String) [], Remo  
+  teException
+    + FullyQualifiedErrorId : Nat 
+   iveCommandError
+ 
+========== LLM DEBUG (attempt 1/2)
+ ==========
+Product ID: 1
+Expected comparison: car
+Expected amount: 15.5
+Expected basis: per serving
+LLM response: {"comparison_key":"c
+ar","explanation":"This product ha
+s a climate impact comparable to d
+riving a car for 999999 km."}
+==================================
+===========
+climate_explanation.invalid_llm_ou
+tput product_id=1 attempt=1
+
+========== LLM DEBUG (attempt 2/2)
+ ==========
+Product ID: 1
+Expected comparison: car
+Expected amount: 15.5
+Expected basis: per serving
+LLM response: {"comparison_key":"c
+ar","explanation":"This product ha
+s a climate impact comparable to d
+riving a car for 999999 km."}
+==================================
+===========
+climate_explanation.invalid_llm_ou
+tput product_id=1 attempt=2
+PASS - Invalid LLM explanation rejected
+PASS - Fallback text available to user
+PASS - Wrong number not displayed
+PASS - Correct fallback text displayed
+PASS - LLM retried after invalid response
+Failures: 0
+
+Exit code: 0
+
+========== test_A3_llm_failure.php ==========
+php.exe : climate_explanation.llm_
+fallback product_id=1 type=Runtime
+Exception message=Simulated Ollama
+ connection failure file=C:\xampp\
+htdocs\Projekter\First-Pro-1\tests
+\test_A3_llm_failure.php line=15
+At line:19 char:5
++     & C:\xampp\php\php.exe "test
+s\$test" 2>&1 |
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~
+    + CategoryInfo          : Not 
+   Specified: (climate_explana..  
+  .ure.php line=15:String) [],    
+ RemoteException
+    + FullyQualifiedErrorId : Nat 
+   iveCommandError
+ 
+PASS - System survives LLM failure
+PASS - PHP fallback activated
+PASS - Fallback explanation displayed
+PASS - LLM failure was simulated
+PASS - Fallback saved in cache
+
+Failures: 0
+
+Exit code: 0
+
+========== test_A4_no_llm_read.php ==========
+PASS - Read works without LLM
+PASS - No LLM calls during read
+PASS - Fallback available without cache
+PASS - Repeated read returns same explanation
+PASS - No cache preparation required
+
+Failures: 0
+
+Exit code: 0

@@ -1,8 +1,11 @@
 <?php
 session_start();
-require_once __DIR__ . '/../src/bootstrap.php';
-$favoriteService = new FavoriteService(null, new SessionBasketStore());
-$cartService = new CartService(null, new SessionBasketStore());
+require_once __DIR__ . '/../Api/connect.php';
+
+$application = flashfood_application($conn);
+
+$favoriteService = $application->favorites();
+$cartService = $application->cart();
 if (isset($_GET['action'])) {
     if ($_GET['action'] === 'clear') { $favoriteService->clear(); header('Location: fav.php'); exit; }
     if ($_GET['action'] === 'remove' && isset($_GET['pid'])) { $favoriteService->remove((int)$_GET['pid']); header('Location: fav.php'); exit; }

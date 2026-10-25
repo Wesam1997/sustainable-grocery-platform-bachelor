@@ -71,7 +71,99 @@
         sync();
     }
 
+
+    function setupClimateHover() {
+        let active = null;
+        let closeTimer = null;
+        function hide() {
+            clearTimeout(closeTimer);
+            if (!active) return;
+            active.tooltip.hidden = true;
+            active.button.setAttribute('aria-expanded', 'false');
+            active.pinned = false;
+            active = null;
+        }
+
+        function position() {
+            if (!active) return;
+            const rect = active.button.getBoundingClientRect();
+            const tooltip = active.tooltip;
+            const left = Math.max(16, Math.min(rect.right - tooltip.offsetWidth,
+                window.innerWidth - tooltip.offsetWidth - 16));
+            const above = rect.top - tooltip.offsetHeight - 8;
+            const top = above >= 16 ? above : rect.bottom + 8;
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${Math.max(16, Math.min(top,
+                window.innerHeight - tooltip.offsetHeight - 16))}px`;
+        }
+
+        function show(item) {
+            clearTimeout(closeTimer);
+            if (active !== item) hide();
+            active = item;
+            item.tooltip.hidden = false;
+            item.button.setAttribute('aria-expanded', 'true');
+
+            position();
+        }
+
+        function scheduleHide(item) {
+            clearTimeout(closeTimer);
+            closeTimer = setTimeout(() => {
+                if (active === item && !item.pinned && !item.hovered &&
+                    document.activeElement !== item.button) hide();
+            }, 150);
+        }
+
+        document.querySelectorAll('.home-climate-help').forEach(help => {
+            const button = help.querySelector('.home-climate-help-button');
+            const tooltip = help.querySelector('.home-climate-tooltip');
+            if (!button || !tooltip) return;
+            const item = { button, tooltip, hovered: false, pinned: false };
+
+            // A body-level tooltip cannot be clipped by the product card.
+            document.body.append(tooltip);
+
+            [help, tooltip].forEach(target => {
+                target.addEventListener('pointerenter', event => {
+                    if (event.pointerType === 'touch') return;
+                    item.hovered = true;
+                    show(item);
+                });
+                target.addEventListener('pointerleave', event => {
+                    if (event.pointerType === 'touch') return;
+                    item.hovered = false;
+                    scheduleHide(item);
+                });
+            });
+            button.addEventListener('focus', () => show(item));
+            button.addEventListener('blur', () => scheduleHide(item));
+            button.addEventListener('click', () => {
+                if (active === item && item.pinned) {
+                    hide();
+                } else {
+                    show(item);
+                    item.pinned = true;
+                }
+            });
+        });
+
+        document.addEventListener('keydown', event => {
+            if (event.key === 'Escape' && active) {
+                event.preventDefault();
+                hide();
+            }
+        });
+        document.addEventListener('pointerdown', event => {
+            if (active && !active.button.contains(event.target) &&
+                !active.tooltip.contains(event.target)) hide();
+        });
+        window.addEventListener('resize', position);
+        window.addEventListener('scroll', position, true);
+    }
+
     function initialize() {
+        setupClimateHover();
         setupFilterIcon();
         setupDualRange('priceMin', 'priceMax', 'priceMinLabel', 'priceMaxLabel', 'priceRange');
         setupDualRange('weightMin', 'weightMax', 'weightMinLabel', 'weightMaxLabel', 'weightRange');
