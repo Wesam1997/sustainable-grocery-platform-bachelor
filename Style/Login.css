@@ -1,55 +1,432 @@
+
+/* ==========================================
+   FLASH FOOD - LOGIN DESIGN
+   ========================================== */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    min-height: 100%;
+}
+
 body {
-  margin: 0;
-  height: 100vh; /* fyld hele skærmen */
-  display: flex;
-  justify-content: center; /* centrer vandret */
-  align-items: center;     /* centrer lodret */
-  font-family: sans-serif;
-  background: #f8f8f8;
+    margin: 0;
+    min-height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #102c25;
+    background: #f5faf2;
 }
 
-.container {
-  background: #fff;
-  padding: 30px 40px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  text-align: center;
+/* ==========================================
+   PAGE BACKGROUND
+   ========================================== */
+
+.login-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 75px 20px;
+
+    background:
+        radial-gradient(
+            ellipse at 18% 82%,
+            rgba(154, 194, 130, 0.28),
+            transparent 48%
+        ),
+        radial-gradient(
+            ellipse at 87% 20%,
+            rgba(179, 213, 158, 0.30),
+            transparent 48%
+        ),
+        linear-gradient(
+            135deg,
+            #fafff8 0%,
+            #eff8ed 55%,
+            #f8fcf6 100%
+        );
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px; /* afstand mellem felter */
+/* Decorative leaf shapes */
+
+.login-page::before,
+.login-page::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: 0 85% 0 85%;
+    transform: rotate(-30deg);
 }
 
-label {
-  align-self: flex-start; /* label står til venstre */
-  font-weight: bold;
-  margin-bottom: 5px;
+.login-page::before {
+    width: 430px;
+    height: 690px;
+    left: -210px;
+    bottom: -240px;
+
+    background: linear-gradient(
+        140deg,
+        rgba(43, 115, 61, 0.70),
+        rgba(145, 192, 112, 0.30)
+    );
 }
 
-input {
-  padding: 8px;
-  width: 220px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.login-page::after {
+    width: 330px;
+    height: 520px;
+    right: -165px;
+    top: -230px;
+
+    background: linear-gradient(
+        140deg,
+        rgba(106, 164, 88, 0.28),
+        rgba(38, 112, 58, 0.16)
+    );
 }
 
-button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  background: #16a34a;
-  color: #fff;
-  font-weight: bold;
-  cursor: pointer;
+/* ==========================================
+   LOGIN CARD
+   ========================================== */
+
+.login-card {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 570px;
+
+    padding: 75px 52px 48px;
+
+    background: #ffffff;
+    border-radius: 24px;
+
+    box-shadow:
+        0 20px 55px rgba(38, 84, 46, 0.12);
+
+    text-align: center;
 }
 
-button:hover {
-  background: #128c3c;
+/* ==========================================
+   LEAF LOGO
+   ========================================== */
+
+.brand-logo {
+    position: absolute;
+    top: -65px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.extra {
-  margin-top: 15px;
+.brand-logo svg {
+    display: block;
+    width: 120px;
+    height: 120px;
+}
+
+/* ==========================================
+   TITLE AND SUBTITLE
+   ========================================== */
+
+.login-card h1 {
+    margin: 0;
+
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.8px;
+    line-height: 1.25;
+
+    color: #103b2e;
+}
+
+.login-subtitle {
+    margin: 16px 0 34px;
+
+    font-size: 17px;
+    color: #657184;
+    line-height: 1.5;
+}
+
+/* ==========================================
+   FORM
+   ========================================== */
+
+#loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+}
+
+.form-group {
+    width: 100%;
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 9px;
+
+    font-size: 14px;
+    font-weight: 600;
+    color: #263a32;
+}
+
+/* ==========================================
+   INPUT FIELDS
+   ========================================== */
+
+.input-wrapper {
+    display: flex;
+    align-items: center;
+
+    width: 100%;
+    min-height: 56px;
+
+    border: 1px solid #d0d8df;
+    border-radius: 12px;
+    background: #ffffff;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.input-wrapper:focus-within {
+    border-color: #34834b;
+
+    box-shadow:
+        0 0 0 3px rgba(52, 131, 75, 0.12);
+}
+
+.input-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 50px;
+    flex-shrink: 0;
+
+    color: #667582;
+}
+
+.input-icon svg {
+    width: 21px;
+    height: 21px;
+}
+
+.input-wrapper input {
+    width: 100%;
+    min-width: 0;
+    height: 54px;
+
+    padding: 0 12px 0 0;
+
+    border: none;
+    outline: none;
+    background: transparent;
+
+    font-family: inherit;
+    font-size: 15px;
+    color: #142c24;
+}
+
+.input-wrapper input::placeholder {
+    color: #8b98a5;
+}
+
+/* ==========================================
+   PASSWORD VISIBILITY BUTTON
+   ========================================== */
+
+.password-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+
+    padding: 12px;
+
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+
+    color: #667582;
+    cursor: pointer;
+}
+
+.password-toggle svg {
+    width: 22px;
+    height: 22px;
+}
+
+.password-toggle:hover {
+    color: #28743d;
+    background: #f0f7ef;
+}
+
+.password-toggle:focus-visible {
+    outline: 2px solid #28743d;
+    outline-offset: 2px;
+}
+
+/* ==========================================
+   LOGIN BUTTON
+   ========================================== */
+
+.login-button {
+    width: 100%;
+    min-height: 56px;
+
+    margin-top: 5px;
+    padding: 14px 20px;
+
+    border: none;
+    border-radius: 12px;
+
+    background: linear-gradient(
+        135deg,
+        #2b7a43,
+        #358d4d
+    );
+
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 17px;
+    font-weight: 700;
+
+    cursor: pointer;
+
+    box-shadow:
+        0 8px 20px rgba(45, 122, 67, 0.14);
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease;
+}
+
+.login-button:hover {
+    background: #246b39;
+    transform: translateY(-1px);
+}
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+.login-button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==========================================
+   CREATE ACCOUNT LINK
+   ========================================== */
+
+.register-link {
+    margin: 32px 0 0;
+
+    color: #596777;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.register-link a {
+    color: #24763c;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.register-link a:hover {
+    color: #164d28;
+}
+
+/* ==========================================
+   STATUS MESSAGE
+   ========================================== */
+
+#statusMessage {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #b42318;
+}
+
+#statusMessage:not(:empty) {
+    margin-bottom: 20px;
+    padding: 12px;
+
+    background: #fff3f1;
+    border: 1px solid #f5c6c0;
+    border-radius: 9px;
+}
+
+/* ==========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 600px) {
+
+    .login-page {
+        padding: 95px 16px 35px;
+    }
+
+    .login-card {
+        max-width: 100%;
+        padding: 65px 24px 35px;
+        border-radius: 20px;
+    }
+
+    .brand-logo {
+        top: -55px;
+    }
+
+    .brand-logo svg {
+        width: 105px;
+        height: 105px;
+    }
+
+    .login-card h1 {
+        font-size: 26px;
+    }
+
+    .login-subtitle {
+        font-size: 15px;
+        margin-bottom: 28px;
+    }
+
+    .login-page::before {
+        width: 260px;
+        height: 430px;
+        left: -170px;
+    }
+
+    .login-page::after {
+        width: 220px;
+        height: 350px;
+        right: -150px;
+    }
+
+    .register-link {
+        font-size: 14px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .login-button,
+    .input-wrapper {
+        transition: none;
+    }
 }

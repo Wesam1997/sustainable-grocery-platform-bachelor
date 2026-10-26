@@ -35,16 +35,27 @@ function rejectLimitedLogin(int $seconds): void
     );
 }
 
+// Only allow POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Allow: POST');
-    loginResponse(405, false, 'Metoden er ikke tilladt.');
+
+    loginResponse(
+        405,
+        false,
+        'Metoden er ikke tilladt.'
+    );
 }
 
 try {
+
+    // Authentication, database and session setup
     require_once __DIR__ . '/auth.php';
     require_once __DIR__ . '/rate_limit.php';
 
-    // Kontroller, at formularen har et gyldigt CSRF-token.
+    // ==========================================
+    // CSRF VALIDATION
+    // ==========================================
+
     $token = $_POST['csrf_token'] ?? '';
 
     if (
@@ -58,13 +69,21 @@ try {
         );
     }
 
+    // ==========================================
+    // IP RATE LIMITING
+    // ==========================================
+
     $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
-    if ($ip === '') {
-        loginResponse(503, false, 'Prøv igen senere.');
+    if (!is_string($ip) || $ip === '') {
+        loginResponse(
+            503,
+            false,
+            'Prøv igen senere.'
+        );
     }
 
-    // Højst 30 loginforsøg pr. IP på 15 minutter.
+    // Maximum 30 login attempts per IP in 15 minutes
     $ipWait = takeRateLimit(
         $conn,
         'login-ip',
@@ -77,12 +96,22 @@ try {
         rejectLimitedLogin($ipWait);
     }
 
-    $email = is_string($_POST['email'] ?? null)
-        ? strtolower(trim($_POST['email'])) : '';
+    // ==========================================
+    // READ LOGIN INPUT
+    // ==========================================
 
-    // Adgangskoden må ikke trimmes.
+    $email = is_string($_POST['email'] ?? null)
+        ? strtolower(trim($_POST['email']))
+        : '';
+
+    // Do not trim passwords
     $password = is_string($_POST['password'] ?? null)
-        ? $_POST['password'] : '';
+        ? $_POST['password']
+        : '';
+
+    // ==========================================
+    // INPUT VALIDATION
+    // ==========================================
 
     if (
         strlen($email) > 254
@@ -98,16 +127,25 @@ try {
         );
     }
 
-    $user = flashfood_application($conn)->users()->findForLogin($email);
+    // ==========================================
+    // FIND USER
+    // ==========================================
 
-    // Brug kontoens ID, hvis den findes.
-    // Det sikrer samme tæller for alternative stavemåder,
-    // som databasens sammenligning accepterer.
+    $users = flashfood_application($conn)->users();
+
+    $user = $users->findForLogin($email);
+
+    // Use user ID when available to prevent
+    // alternative email spelling from bypassing limits
     $accountKey = $user
         ? 'user:' . $user['id']
         : 'email:' . $email;
 
-    // Højst 5 loginforsøg pr. konto på 15 minutter.
+    // ==========================================
+    // ACCOUNT RATE LIMITING
+    // ==========================================
+
+    // Maximum 5 attempts per account in 15 minutes
     $accountWait = takeRateLimit(
         $conn,
         'login-account',
@@ -120,7 +158,14 @@ try {
         rejectLimitedLogin($accountWait);
     }
 
-    $passwordMatches = flashfood_application($conn)->users()->passwordMatches($user, $password);
+    // ==========================================
+    // VERIFY PASSWORD
+    // ==========================================
+
+    $passwordMatches = $users->passwordMatches(
+        $user,
+        $password
+    );
 
     if (!$user || !$passwordMatches) {
         loginResponse(
@@ -130,21 +175,44 @@ try {
         );
     }
 
-    // Nyt sessions-ID efter vellykket login.
+    // ==========================================
+    // CREATE LOGIN SESSION
+    // ==========================================
+
     if (!session_regenerate_id(true)) {
-        throw new RuntimeException('Session regeneration failed.');
+        throw new RuntimeException(
+            'Session regeneration failed.'
+        );
     }
 
     $_SESSION['user_id'] = (int) $user['id'];
 
-    // Nyt token efter login.
-    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    // Generate a new CSRF token after login
+    $_SESSION['csrf_token'] = bin2hex(
+        random_bytes(32)
+    );
 
     session_write_close();
 
-    loginResponse(200, true, 'Du er nu logget ind.');
+    // ==========================================
+    // LOGIN SUCCESS
+    // ==========================================
+
+    loginResponse(
+        200,
+        true,
+        'Du er nu logget ind.'
+    );
+
 } catch (Throwable $exception) {
-    (new SystemLogger())->error('user.login_failed', ['type' => get_class($exception)]);
+
+    // Log server errors without exposing details
+    if (class_exists('SystemLogger')) {
+        (new SystemLogger())->error(
+            'user.login_failed',
+            ['type' => get_class($exception)]
+        );
+    }
 
     loginResponse(
         500,
