@@ -1,9 +1,11 @@
 <?php
 declare(strict_types=1);
-
 final class ClimateService implements ClimateServiceInterface
 {
-    public function __construct(private ClimateCalculationProviderInterface $calculators) {}
+    public function __construct(
+        private ClimateCalculationProviderInterface $calculators
+    ) {}
+
     public function calculate(array $row): array
     {
         $climate = $this->calculators->calculate($row);
@@ -25,7 +27,7 @@ final class ClimateService implements ClimateServiceInterface
         );
 
         /*
-         * Low, Medium and High are always calculated using
+         * Low, Medium and High are calculated using
          * the comparable per-kilogram value.
          */
         $classification = $this->classify(
@@ -35,13 +37,20 @@ final class ClimateService implements ClimateServiceInterface
         $climate['label'] = $classification['label'];
         $climate['rank'] = $classification['rank'];
 
+        /*
+         * The explanation uses the configured thresholds
+         * instead of hard-coded numbers.
+         */
         $climate['classification_note'] =
-            'Prototype categories are based on emissions per kg: '
-            . 'Low up to 2; Medium above 2 and up to 5; '
-            . 'High above 5.';
+            'Dataset-relative climate categories (kg CO2e/kg): '
+            . 'Low up to ' . CO2_LOW_MAX . '; '
+            . 'Medium above ' . CO2_LOW_MAX
+            . ' and up to ' . CO2_MEDIUM_MAX . '; '
+            . 'High above ' . CO2_MEDIUM_MAX . '.';
 
         return $climate;
     }
+
     public function classify($value): array
     {
         if (

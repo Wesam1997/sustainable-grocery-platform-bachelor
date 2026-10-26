@@ -7,20 +7,28 @@ const PRICE_FILTER_MAX = 500;
 const WEIGHT_FILTER_MIN = 0;
 const WEIGHT_FILTER_MAX = 5000;
 
-
 /*
- * Prototype thresholds.
- * Classification is always based on CO₂e per kg,
- * even when a restaurant meal is displayed per serving.
+ * Data-derived climate classification thresholds.
+ *
+ * Thresholds were calculated using tertiles from
+ * 2451 environmental_food_data records.
+ *
+ * Classification is based on kg CO2e per kg of food,
+ * including restaurant meals displayed per serving.
+ *
+ * Low:    <= 1.80
+ * Medium: > 1.80 and <= 5.21
+ * High:   > 5.21
+ *
+ * These are dataset-relative thresholds,
+ * not universal scientific standards.
  */
-const CO2_LOW_MAX = 2.0;
-const CO2_MEDIUM_MAX = 5.0;
-
+const CO2_LOW_MAX = 1.80;
+const CO2_MEDIUM_MAX = 5.21;
 
 const RESTAURANTS = ['Sakura'];
 const MARKETS = ['ØkoHaven'];
 const LOCAL_MERCHANTS = ['ØkoHaven'];
-
 
 const MEAT_RED = [
     'okse',
@@ -37,7 +45,6 @@ const MEAT_RED = [
     'lamb'
 ];
 
-
 const MEAT_WHITE = [
     'kylling',
     'høne',
@@ -45,7 +52,6 @@ const MEAT_WHITE = [
     'chicken',
     'turkey'
 ];
-
 
 const FISH = [
     'fisk',
@@ -70,6 +76,3 @@ const FISH = [
     'ebi',
     'scampi'
 ];
-
-
-
