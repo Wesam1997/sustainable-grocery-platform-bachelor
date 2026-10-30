@@ -1,9 +1,12 @@
 <?php
 declare(strict_types=1);
+
 use PHPUnit\Framework\TestCase;
-require_once __DIR__ . '/../Api/Climate/ClimateCalculatorRegistry.php';
-require_once __DIR__ . '/../Api/Climate/GroceryClimateCalculator.php';
-require_once __DIR__ . '/../Api/Climate/RecipeClimateCalculator.php';
+
+require_once __DIR__ . '/../src/Modules/Climate/ClimateCalculatorInterface.php';
+require_once __DIR__ . '/../src/Modules/Climate/ClimateCalculatorRegistry.php';
+require_once __DIR__ . '/../src/Modules/Climate/GroceryClimateCalculator.php';
+require_once __DIR__ . '/../src/Modules/Climate/RecipeClimateCalculator.php';
 
 final class ClimateCalculatorRegistryTest extends TestCase
 {

@@ -1,172 +1,102 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../../Contracts/ClimateMetricsInterface.php';
+require_once __DIR__ . '/../../Contracts/ComparisonEngineInterface.php';
+require_once __DIR__ . '/../../Contracts/ClimateExplanationInterface.php';
+require_once __DIR__ . '/PackageClimateCalculator.php';
 
 final class ClimateMetrics implements ClimateMetricsInterface
 {
+    private PackageClimateCalculator $packageCalculator;
+
     public function __construct(
         private ComparisonEngineInterface $comparisons,
-        private ClimateExplanationInterface $explanations
-    ) {}
+        private ClimateExplanationInterface $explanations,
+        ?PackageClimateCalculator $packageCalculator = null
+    ) {
+        $this->packageCalculator =
+            $packageCalculator ?? new PackageClimateCalculator();
+    }
 
     public function format(
         array $row,
-        array $sig,
-        int $rank
+        array $signals = [],
+        ?int $rank = null
     ): array {
-        $co2 = is_array($sig['co2'] ?? null)
-            ? $sig['co2']
-            : [];
+        $climate = $signals['co2'] ?? [];
 
-        $rawValue = $co2['value'] ?? null;
+        $available = ($climate['available'] ?? false) === true;
 
-        $available =
-            ($co2['available'] ?? true) !== false
-            && is_numeric($rawValue)
-            && is_finite((float) $rawValue)
-            && (float) $rawValue >= 0;
-
-        $value = $available
-            ? (float) $rawValue
+        $value = $available && is_numeric($climate['value'] ?? null)
+            ? (float)$climate['value']
             : null;
 
-        $rank = $available
-            ? (int) ($co2['rank'] ?? $rank)
-            : 0;
+        $basis = $climate['basis'] ?? null;
 
-        $className = match ($rank) {
-            1 => 'low',
-            2 => 'medium',
-            3 => 'high',
-            default => 'unknown'
-        };
+        $rank ??= (int)($climate['rank'] ?? 0);
 
-        $label = match ($rank) {
+        $labels = [
             1 => 'Low CO₂e emissions',
             2 => 'Medium CO₂e emissions',
-            3 => 'High CO₂e emissions',
-            default => 'CO₂e emissions'
-        };
+            3 => 'High CO₂e emissions'
+        ];
 
-        $basis = (string) ($co2['basis'] ?? 'per kg');
+        $label = $labels[$rank] ?? 'Unknown CO₂e emissions';
 
-        $note = $available
-            ? (string) ($co2['note'] ?? '')
-            : 'Climate impact information is not available.';
-
-        /*
-         * The existing comparison uses the same basis as value:
-         * per kg, per serving or per box.
-         */
-        $comparison = $available
-            ? $this->comparisons->compare($value, $basis, 'car')
-            : null;
-
-        /*
-         * Additional package estimate.
-         * Use a recorded calculation weight that matches the
-         * environmental reference, rather than guessing from the title.
-         */
-        $rawWeight = $row['climate_weight_g'] ?? null;
-
-        $weightAvailable =
-            is_numeric($rawWeight)
-            && is_finite((float) $rawWeight)
-            && (float) $rawWeight > 0;
-
-        $weightGrams = $weightAvailable
-            ? (float) $rawWeight
-            : null;
-
-        $packageValue = null;
-
-        /*
-         * A value already expressed per serving or per box must
-         * not be multiplied by the weight again.
-         */
-        if ($available && $basis === 'per kg' && $weightAvailable) {
-            $calculatedValue = $value * ($weightGrams / 1000);
-
-            if (is_finite($calculatedValue)) {
-                $packageValue = $calculatedValue;
-            }
-        }
-
-        $packageAvailable = $packageValue !== null;
-
-        $packageComparison = $packageAvailable
-            ? $this->comparisons->compare(
-                $packageValue,
-                'per package',
-                'car'
-            )
-            : null;
-
-        return [
-            'product_id' => (int) ($row['id'] ?? 0),
+        $result = array_merge($climate, [
             'available' => $available,
-            'is_estimate' => true,
-            'is_example' => (bool) ($co2['is_example'] ?? false),
-
-            // Existing value and basis remain available to the UI.
             'value' => $value,
-            'formatted' => $available
+            'formatted' => $value !== null
                 ? number_format($value, 2, '.', '')
-                : '',
-
-            'unit' => $basis,
-            'full_unit' => 'kg CO₂e ' . $basis,
-
-            // Classification is not recalculated from package size.
+                : null,
             'rank' => $rank,
             'label' => $label,
-            'className' => $className,
-
-            'note' => $note,
-            'comparison' => $available
-                ? $this->explanations->explain($co2, $comparison)
-                : $note,
-
-            'comparison_data' => $comparison,
-
-            'classification_note' =>
-                $co2['classification_note'] ?? '',
-
-            'driving_km' => $comparison !== null
-                ? (int) round($comparison['value'])
-                : null,
-
-            // New package-specific result.
-            'package' => [
-                'available' => $packageAvailable,
-                'calculation_weight_g' => $weightGrams,
-                'value' => $packageValue,
-
-                'formatted' => $packageAvailable
-                    ? number_format($packageValue, 2, '.', '')
-                    : '',
-
-                'unit' => 'per package',
-                'full_unit' => 'kg CO₂e per package',
-                'is_estimate' => true,
-                'is_example' => (bool) ($co2['is_example'] ?? false),
-
-                'comparison_data' => $packageComparison,
-
-                'driving_km' => $packageComparison !== null
-                    ? round((float) $packageComparison['value'], 1)
-                    : null,
-
-                'note' => $packageAvailable
-                    ? 'Estimated using the recorded weight matching the food reference.'
-                    : 'A package estimate requires a per-kg climate value and a matching recorded weight.'
-            ],
-
+            'className' => match ($rank) {
+                1 => 'low',
+                2 => 'medium',
+                3 => 'high',
+                default => 'unknown'
+            },
             'rating_score' => match ($rank) {
                 1 => 5,
                 2 => 3,
                 3 => 1,
-                default => 0
+                default => null
             }
-        ];
+        ]);
+
+        // Calculate package impact only from a per-kg value.
+        $weight = $row['climate_weight_g'] ?? null;
+
+        $result['package'] = $this->packageCalculator->calculate(
+            $value,
+            $basis,
+            $weight
+        );
+
+        // Compare the displayed climate value with driving.
+        $carComparison = $value !== null
+            ? $this->comparisons->compare($value, $basis, 'car')
+            : null;
+
+        $result['comparison'] = $carComparison;
+        $result['driving_km'] = $carComparison;
+
+        // Package comparison is only possible when weight is known.
+        if ($result['package']['available'] === true) {
+            $packageComparison = $this->comparisons->compare(
+                $result['package']['value'],
+                'per package',
+                'car'
+            );
+
+            $result['package']['driving_km'] = $packageComparison;
+        } else {
+            $result['package']['driving_km'] = null;
+        }
+
+        $result['explanation'] = null;
+
+        return $result;
     }
 }

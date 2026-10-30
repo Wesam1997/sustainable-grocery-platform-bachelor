@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 $source = file_get_contents(
-    dirname(__DIR__) . '/Api/instant_comparisons.php'
+    dirname(__DIR__, 2) . '/Api/instant_comparisons.php'
 );
 
 if ($source === false) {

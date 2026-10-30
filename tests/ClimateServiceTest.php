@@ -73,4 +73,62 @@ final class ClimateServiceTest extends TestCase
         $this->assertSame('Unknown', $result['label']);
         $this->assertSame(0, $result['rank']);
     }
+
+public function testCalculateUsesInjectedCalculator(): void
+{
+    $product = [
+        'id' => 19,
+        'title' => 'Organic Chickpeas 400 g'
+    ];
+
+    $expectedClimate = [
+        'available' => true,
+        'value' => 0.88,
+        'per_kg' => 2.20,
+        'basis' => 'per package',
+        'unit' => 'kg CO2e'
+    ];
+
+    $calculator = $this->createMock(
+        ClimateCalculationProviderInterface::class
+    );
+
+    $calculator->expects($this->once())
+        ->method('calculate')
+        ->with($this->equalTo($product))
+        ->willReturn($expectedClimate);
+
+    $service = new ClimateService($calculator);
+
+    $result = $service->calculate($product);
+
+    $this->assertTrue($result['available']);
+    $this->assertSame(0.88, $result['value']);
+    $this->assertSame(2.20, $result['per_kg']);
+    $this->assertSame('Medium', $result['label']);
+    $this->assertSame(2, $result['rank']);
+}
+
+public function testUnavailableClimateCannotBeClassified(): void
+{
+    $calculator = $this->createMock(
+        ClimateCalculationProviderInterface::class
+    );
+
+    $calculator->method('calculate')->willReturn([
+        'available' => false,
+        'value' => null,
+        'per_kg' => 1.50
+    ]);
+
+    $service = new ClimateService($calculator);
+
+    $result = $service->calculate(['id' => 19]);
+
+    $this->assertFalse($result['available']);
+    $this->assertSame('Unknown', $result['label']);
+    $this->assertSame(0, $result['rank']);
+}
+
+
 }

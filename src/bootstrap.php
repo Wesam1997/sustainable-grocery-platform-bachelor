@@ -31,7 +31,7 @@ spl_autoload_register(static function (string $class): void {
     }
 });
 
-require_once __DIR__ . '/../Api/Climate/ClimateServiceFactory.php';
+require_once __DIR__ . '/Modules/Climate/ClimateServiceFactory.php';
 
 /**
  * Application composition root.

@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../src/Contracts/LlmClientInterface.php';
-require_once __DIR__ . '/../Api/instant_comparisons.php';
-require_once __DIR__ . '/../src/Infrastructure/Database/DatabaseConnection.php';
+require_once __DIR__ . '/../../src/Contracts/LlmClientInterface.php';
+require_once __DIR__ . '/../../Api/instant_comparisons.php';
+require_once __DIR__ . '/../../src/Infrastructure/Database/DatabaseConnection.php';
 
 class CountingLlmA4 implements LlmClientInterface
 {
