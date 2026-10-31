@@ -8,10 +8,11 @@ require_once __DIR__ . '/RecipeClimateCalculator.php';
 
 final class ClimateServiceFactory
 {
-    public static function create(): ClimateCalculatorRegistry
-    {
+    public static function create(
+        array $restaurantMerchants = RESTAURANTS
+    ): ClimateCalculatorRegistry {
         return new ClimateCalculatorRegistry(
-            new RecipeClimateCalculator(),
+            new RecipeClimateCalculator($restaurantMerchants),
             new GroceryClimateCalculator()
         );
     }

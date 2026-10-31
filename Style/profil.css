@@ -1,60 +1,667 @@
+
+/* =====================================================
+   FLASH FOOD - PROFILE PAGE
+   File: Style/profil.css
+
+   Responsibilities:
+   - Global page styles
+   - Header and navigation
+   - Profile layout
+   - Sidebar
+   - Responsive design
+
+   Individual cards are styled in:
+   profile-components.css
+===================================================== */
+
+
+/* =========================
+   DESIGN VARIABLES
+========================= */
+
 :root {
-  --bg:#f7f8fb; --card:#ffffff; --text:#111827; --muted:#6b7280;
-  --border:#e5e7eb; --accent:#16a34a; --accent-2:#0ea5e9;
-  --radius:14px; --shadow:0 10px 24px rgba(0,0,0,.06);
+    --profile-primary: #286b42;
+    --profile-primary-dark: #194c2e;
+    --profile-primary-light: #e9f3eb;
+
+    --profile-background: #f7f9f6;
+    --profile-surface: #ffffff;
+
+    --profile-text: #26352b;
+    --profile-muted: #728075;
+
+    --profile-border: #e4ebe4;
+
+    --profile-radius: 18px;
+
+    --profile-shadow:
+        0 5px 24px rgba(30, 65, 38, 0.045);
+
+    --profile-font:
+        "Segoe UI", Arial, sans-serif;
 }
 
-* { box-sizing:border-box }
+
+/* =========================
+   GLOBAL RESET
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 100px;
+}
 
 body {
-  margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Inter,Roboto,Arial,sans-serif;
-  color:var(--text);
-  background:var(--bg);
+    margin: 0;
+    min-height: 100vh;
+
+    background: var(--profile-background);
+    color: var(--profile-text);
+
+    font-family: var(--profile-font);
+    line-height: 1.5;
 }
 
-/* HEADER */
-header { position:sticky; top:0; z-index:10; background:#fff; border-bottom:1px solid var(--border); }
-.topbar { max-width:1100px; margin:0 auto; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.brand { font-weight:800; font-size:20px; text-decoration:none; color:inherit }
-.avatar { display:grid; place-items:center; width:36px; height:36px; border-radius:50%; background:#111; color:#fff; font-weight:700 }
-.avatar a { color:#fff; text-decoration:none; display:grid; place-items:center; width:100%; height:100% }
-.avatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; }
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
 
-/* LAYOUT */
-.container { max-width:1100px; margin:20px auto; padding:0 16px }
-.grid { display:grid; grid-template-columns:280px 1fr; gap:20px }
-@media (max-width:900px) { .grid { grid-template-columns:1fr } }
+button {
+    cursor: pointer;
+}
 
-/* KORT / TEKST */
-.card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow) }
-.card-header { padding:16px; border-bottom:1px solid var(--border); font-weight:700 }
-.card-body { padding:16px }
-.muted { color:var(--muted) }
-.profile-summary .row { display:flex; gap:10px; margin:8px 0; color:var(--muted) }
-.profile-summary .label { min-width:110px; color:#374151 }
+a {
+    color: inherit;
+    text-decoration: none;
+}
 
-/* ACTIONS */
-.actions { display:grid; gap:10px }
-.btn,.link-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 14px; border-radius:10px; border:1px solid var(--border); background:#eef7f0; color:#065f46; font-weight:700; text-decoration:none; cursor:pointer }
-.btn:hover,.link-btn:hover { filter:brightness(.97) }
-.btn-primary { background:var(--accent); color:#fff; border-color:transparent }
-.btn-outline { background:#fff }
-.btn-danger { background:#fee2e2; color:#b91c1c; border-color:#fecaca }
+svg {
+    display: block;
+}
 
-/* PILLS */
-.pill-link { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:999px; border:1px solid var(--border); background:#fff; text-decoration:none; color:inherit; }
-.pill-link:hover { background:#f3f4f6 }
-.wishlist-pill { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:14px; font-weight:800; background:#e6f4ec; color:#065f46; border:1px solid #bbf7d0; text-decoration:none; box-shadow:var(--shadow); }
-.wishlist-pill:hover { background:#dff0e6 }
+:focus-visible {
+    outline: 3px solid #6eb184;
+    outline-offset: 3px;
+}
 
-/* FOOTER */
-footer { position:sticky; bottom:0; background:#fff; border-top:1px solid var(--border) }
-.bottombar { max-width:1100px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; gap:12px; }
-.slot { flex:1 }
-.slot.center { text-align:center }
-.slot.right { text-align:right }
 
-/* Home-knap */
-.home-btn { display:grid; place-items:center; width:44px; height:44px; background:#111; color:#fff; border-radius:12px; border:2px solid #fff; text-decoration:none; box-shadow:0 6px 16px rgba(0,0,0,.2); font-size:20px; }
-.home-btn:hover { filter:brightness(1.1) }
+/* =========================
+   SITE HEADER
+========================= */
+
+.site-header {
+    width: 100%;
+
+    background: #ffffff;
+
+    border-bottom:
+        1px solid var(--profile-border);
+
+    position: relative;
+    z-index: 20;
+}
+
+.topbar {
+    width: min(1200px, calc(100% - 48px));
+
+    min-height: 78px;
+
+    margin: 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 30px;
+}
+
+
+/* =========================
+   FLASH FOOD BRAND / LOGO
+
+   Same leaf symbol as HomeStyle.css
+========================= */
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+
+    gap: 10px;
+
+    flex-shrink: 0;
+
+    color: var(--green-dark, #194c2e);
+
+    font-size: 21px;
+    font-weight: 850;
+    letter-spacing: normal;
+
+    text-decoration: none;
+}
+
+.brand-mark {
+    position: relative;
+
+    width: 24px;
+    height: 24px;
+
+    display: inline-block;
+    flex-shrink: 0;
+
+    background: transparent;
+    border-radius: 0;
+}
+
+.brand-mark::before,
+.brand-mark::after {
+    content: "";
+
+    position: absolute;
+
+    width: 11px;
+    height: 17px;
+
+    border-radius: 11px 11px 3px 11px;
+
+    background: var(--green, #286b42);
+}
+
+.brand-mark::before {
+    left: 3px;
+    top: 4px;
+
+    transform: rotate(-30deg);
+}
+
+.brand-mark::after {
+    right: 2px;
+    top: 2px;
+
+    transform: rotate(35deg);
+}
+
+
+/* =========================
+   MAIN NAVIGATION
+========================= */
+
+.main-nav {
+    display: flex;
+    align-items: center;
+
+    gap: 32px;
+}
+
+.nav-link {
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #56655a;
+
+    transition: color 0.2s ease;
+}
+
+.nav-link:hover,
+.nav-link:focus-visible {
+    color: var(--profile-primary);
+}
+
+
+/* =========================
+   HEADER ACTIONS
+========================= */
+
+.header-actions {
+    display: flex;
+    align-items: center;
+
+    gap: 22px;
+}
+
+.header-link {
+    position: relative;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    color: #43574a;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.header-link:hover {
+    color: var(--profile-primary);
+    transform: translateY(-1px);
+}
+
+.header-action-icon,
+.header-link svg {
+    width: 23px;
+    height: 23px;
+}
+
+.profile-current {
+    color: var(--profile-primary);
+}
+
+.cart-count {
+    position: absolute;
+
+    top: -9px;
+    right: -11px;
+
+    min-width: 17px;
+    height: 17px;
+
+    padding: 0 4px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 999px;
+
+    background: var(--profile-primary);
+    color: white;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+
+/* =========================
+   PROFILE PAGE CONTAINER
+========================= */
+
+.profile-page {
+    width: min(1160px, calc(100% - 48px));
+
+    margin: 0 auto;
+
+    padding: 42px 0 80px;
+}
+
+
+/* =========================
+   PAGE INTRO
+========================= */
+
+.page-intro {
+    margin-bottom: 32px;
+}
+
+.page-intro h1 {
+    margin: 0 0 7px;
+
+    font-size: clamp(27px, 3vw, 35px);
+    font-weight: 750;
+
+    letter-spacing: -1px;
+
+    color: var(--profile-text);
+}
+
+.page-intro p {
+    margin: 0;
+
+    font-size: 15px;
+
+    color: var(--profile-muted);
+}
+
+
+/* =========================
+   PROFILE GRID
+========================= */
+
+.profile-layout {
+    display: grid;
+
+    grid-template-columns:
+        245px minmax(0, 1fr);
+
+    align-items: start;
+
+    gap: 28px;
+}
+
+.content-column {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 22px;
+}
+
+
+/* =========================
+   SIDEBAR PANEL
+========================= */
+
+.side-panel {
+    background: var(--profile-surface);
+
+    border:
+        1px solid var(--profile-border);
+
+    border-radius: var(--profile-radius);
+
+    box-shadow: var(--profile-shadow);
+
+    padding: 22px 13px;
+
+    position: sticky;
+    top: 20px;
+}
+
+.sidebar-label {
+    padding: 0 14px;
+
+    margin-bottom: 17px;
+
+    font-size: 11px;
+    font-weight: 750;
+
+    letter-spacing: 1.1px;
+
+    color: #98a59a;
+}
+
+
+/* =========================
+   SIDEBAR NAVIGATION
+========================= */
+
+.side-nav {
+    display: flex;
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+.side-link {
+    min-height: 45px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 11px 14px;
+
+    border-radius: 11px;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    color: #627267;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.side-link:hover {
+    background: #f3f7f3;
+
+    color: var(--profile-primary);
+}
+
+.side-link.selected {
+    background: var(--profile-primary-light);
+
+    color: var(--profile-primary-dark);
+
+    font-weight: 700;
+}
+
+.side-icon {
+    width: 20px;
+    height: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+}
+
+.side-icon svg {
+    width: 19px;
+    height: 19px;
+}
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+.sidebar-bottom {
+    margin-top: 23px;
+
+    padding-top: 17px;
+
+    border-top:
+        1px solid var(--profile-border);
+}
+
+.sidebar-bottom form {
+    margin: 0;
+}
+
+.logout-button {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+
+    gap: 12px;
+
+    padding: 12px 14px;
+
+    border: none;
+    border-radius: 11px;
+
+    background: transparent;
+
+    color: #a04f4f;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    text-align: left;
+
+    transition: background 0.2s ease;
+}
+
+.logout-button:hover {
+    background: #fff0f0;
+}
+
+.logout-button svg {
+    width: 19px;
+    height: 19px;
+}
+
+
+/* =========================
+   SHARED CARD BASE
+========================= */
+
+.content-column > .card {
+    background: var(--profile-surface);
+
+    border:
+        1px solid var(--profile-border);
+
+    border-radius: var(--profile-radius);
+
+    box-shadow: var(--profile-shadow);
+
+    padding: 27px 30px;
+}
+
+
+/* =========================
+   TABLET RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+
+    .profile-layout {
+        grid-template-columns:
+            210px minmax(0, 1fr);
+
+        gap: 18px;
+    }
+
+    .content-column > .card {
+        padding: 23px;
+    }
+
+    .main-nav {
+        gap: 18px;
+    }
+
+    .header-actions {
+        gap: 15px;
+    }
+}
+
+
+/* =========================
+   MOBILE RESPONSIVE
+========================= */
+
+@media (max-width: 700px) {
+
+    .topbar {
+        width: calc(100% - 32px);
+
+        min-height: 70px;
+
+        gap: 12px;
+    }
+
+    .brand {
+        font-size: 18px;
+    }
+
+    .brand-mark {
+        width: 24px;
+        height: 24px;
+    }
+
+    .main-nav {
+        display: none;
+    }
+
+    .header-actions {
+        gap: 17px;
+    }
+
+    .profile-page {
+        width: calc(100% - 28px);
+
+        padding: 27px 0 50px;
+    }
+
+    .page-intro {
+        margin-bottom: 24px;
+    }
+
+    .profile-layout {
+        grid-template-columns: 1fr;
+
+        gap: 20px;
+    }
+
+    .side-panel {
+        position: static;
+
+        padding: 16px;
+    }
+
+    .sidebar-label {
+        margin-bottom: 12px;
+    }
+
+    .side-nav {
+        display: grid;
+
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+
+        gap: 7px;
+    }
+
+    .side-link {
+        padding: 10px;
+
+        font-size: 12px;
+
+        gap: 8px;
+    }
+
+    .sidebar-bottom {
+        margin-top: 15px;
+    }
+
+    .content-column {
+        gap: 17px;
+    }
+
+    .content-column > .card {
+        padding: 21px 18px;
+    }
+}
+
+
+/* =========================
+   VERY SMALL SCREENS
+========================= */
+
+@media (max-width: 380px) {
+
+    .brand {
+        font-size: 18px;
+    }
+
+    .header-actions {
+        gap: 12px;
+    }
+
+    .side-link {
+        font-size: 11px;
+    }
+}
+
+
+/* =========================
+   REDUCED MOTION
+========================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+    html {
+        scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+    }
+}
