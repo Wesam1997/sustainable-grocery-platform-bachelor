@@ -5,37 +5,27 @@ require_once __DIR__ . '/../Api/auth.php';
 require_once __DIR__ . '/../Api/catalog.php';
 require_once __DIR__ . '/../Api/climate_metrics.php';
 require_once __DIR__ . '/../Api/instant_comparisons.php';
+
 $instantComparisons = new FlashFoodInstantComparisons($conn);
-
 $loggedInUser = currentUser();
-
 $filters = parse_filters($_GET);
 $items = get_catalog_items($conn, $_GET);
-
-/* Kurv */
 $cart_count = flashfood_application($conn)->cart()->count();
 
-/* Filterværdier */
 $type = $filters['type'];
 $query = $filters['q'] ?? '';
-
 $pmin = $filters['pmin'];
 $pmax = $filters['pmax'];
-
 $wmin = $filters['wmin'];
 $wmax = $filters['wmax'];
-
 $onlyVeg = $filters['onlyVeg'];
 $onlyMeat = $filters['onlyMeat'];
-
 $lowCO2 = $filters['lowCO2'];
 $midCO2 = $filters['midCO2'];
 $highCO2 = $filters['highCO2'];
-
 $localOnly = $filters['localOnly'];
 $sort = $filters['sort'];
 
-/* Sikker visning af tekst */
 function h(mixed $value): string
 {
     return htmlspecialchars(
@@ -45,11 +35,9 @@ function h(mixed $value): string
     );
 }
 
-/* Placeholder, hvis produktet mangler et billede */
 function product_initial(string $title): string
 {
     $title = trim($title);
-
     if ($title === '') {
         return '?';
     }
@@ -60,11 +48,6 @@ function product_initial(string $title): string
     );
 }
 
-/*
- * Climate information for the selected "Somewhat interested" prototype.
- * Real CO2e values are used when catalog.php provides one of the supported
- * numeric fields. Rank-based fallback values are explicitly marked as examples.
- */
 function is_restaurant_item(array $row): bool
 {
     $typeValue = mb_strtolower(
@@ -77,15 +60,13 @@ function is_restaurant_item(array $row): bool
         || str_contains($typeValue, 'dish');
 }
 
-/*
- * Wolt-style rows. Supermarket products are not restricted by CO2 rank,
- * so low, medium and high impact products all remain available.
- */
 $popularItems = array_slice($items, 0, 8);
+
 $supermarketItems = array_values(array_filter(
     $items,
     static fn(array $row): bool => !is_restaurant_item($row)
 ));
+
 $restaurantItems = array_values(array_filter(
     $items,
     static fn(array $row): bool => is_restaurant_item($row)
@@ -111,459 +92,17 @@ $productSections = [
         'items' => $restaurantItems,
     ],
 ];
-
 ?>
-
 <!doctype html>
 <html lang="en">
-
 <head>
     <meta charset="utf-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Flash Food</title>
 
-    <link
-        rel="stylesheet"
-        href="../Style/HomeStyle.css?v=home-complete-2"
-    >
-
-<script
-        src="../Js/AddToFav.js"
-        defer
-    ></script>
-
-    <script
-        src="../Js/Home.js?v=20261015-llm-hover"
-        defer
-    ></script>
-
-
-<style>
-/* Catalog and filter */
-.catalog-layout {
-    width: min(1380px, calc(100% - 32px));
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-    gap: 22px;
-}
-
-.catalog-sidebar {
-    position: sticky;
-    top: 90px;
-    z-index: 20;
-    width: max-content;
-    max-width: 320px;
-}
-
-.filter {
-    width: 110px;
-    transition: width 0.22s ease;
-}
-
-.filter[open] {
-    width: 320px;
-}
-
-.filter summary {
-    list-style: none;
-}
-
-.filter summary::-webkit-details-marker {
-    display: none;
-}
-
-.filter-btn {
-    width: 100%;
-    min-height: 48px;
-    padding: 0 15px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 9px;
-    border: 1px solid var(--border);
-    border-radius: 13px;
-    color: #26342b;
-    background: #fff;
-    font-size: 14px;
-    font-weight: 800;
-    cursor: pointer;
-    box-shadow: 0 6px 18px rgba(25, 55, 31, 0.05);
-}
-
-.filter-button-mark {
-    width: 12px;
-    height: 12px;
-    display: block;
-    border: 2px solid var(--green);
-    border-radius: 3px;
-}
-
-.filter-panel {
-    width: 100%;
-    max-height: calc(100vh - 155px);
-    margin-top: 10px;
-    padding: 18px;
-    overflow-y: auto;
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    background: #fff;
-    box-shadow: var(--shadow);
-}
-
-.filter-title {
-    padding-bottom: 14px;
-    border-bottom: 1px solid #edf1ee;
-}
-
-.filter-title h3 {
-    margin: 0 0 5px;
-    font-size: 18px;
-}
-
-.filter-title p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.filter-group {
-    margin-top: 15px;
-    padding: 15px;
-    border: 1px solid #e3eae4;
-    border-radius: 14px;
-    background: #fbfcfb;
-}
-
-.group-title {
-    position: relative;
-    margin: 0 0 12px;
-    padding-left: 11px;
-    color: #26342b;
-    font-size: 12px;
-    font-weight: 850;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-}
-
-.group-title::before {
-    content: "";
-    position: absolute;
-    top: 1px;
-    left: 0;
-    width: 3px;
-    height: 14px;
-    border-radius: 999px;
-    background: var(--green);
-}
-
-.filter-row {
-    min-height: 38px;
-    padding: 5px 3px;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    color: #28352d;
-    font-size: 13px;
-    cursor: pointer;
-}
-
-.filter-row input[type="checkbox"] {
-    width: 17px;
-    height: 17px;
-    flex: 0 0 17px;
-    accent-color: var(--green);
-    cursor: pointer;
-}
-
-.impact-filter-copy {
-    display: grid;
-    gap: 2px;
-}
-
-.impact-filter-copy small,
-.climate-filter-note {
-    color: #647269;
-    font-size: 0.78rem;
-    line-height: 1.35;
-}
-
-.climate-filter-note {
-    margin: 10px 0;
-}
-
-.impact-dot {
-    width: 10px;
-    height: 10px;
-    flex: 0 0 10px;
-    display: inline-block;
-    border-radius: 50%;
-}
-
-.impact-low {
-    background: var(--low);
-}
-
-.impact-medium {
-    background: var(--medium);
-}
-
-.impact-high {
-    background: var(--high);
-}
-
-.filter-section-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.filter-section-header h4 {
-    margin: 0;
-    color: #26342b;
-    font-size: 12px;
-    font-weight: 850;
-    text-transform: uppercase;
-}
-
-.range-value {
-    color: #237239;
-    font-size: 12px;
-    font-weight: 800;
-    white-space: nowrap;
-}
-
-.dual-range {
-    --min-pos: 0%;
-    --max-pos: 100%;
-    position: relative;
-    width: 100%;
-    height: 40px;
-    margin-top: 8px;
-}
-
-.dual-range__track {
-    position: absolute;
-    top: 50%;
-    right: 0;
-    left: 0;
-    height: 5px;
-    transform: translateY(-50%);
-    border-radius: 999px;
-    background: linear-gradient(
-        to right,
-        #dae2db 0 var(--min-pos),
-        var(--green) var(--min-pos) var(--max-pos),
-        #dae2db var(--max-pos) 100%
-    );
-}
-
-.dual-range__input {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 40px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    background: transparent;
-    pointer-events: none;
-    appearance: none;
-    -webkit-appearance: none;
-}
-
-.dual-range__input::-webkit-slider-runnable-track {
-    height: 5px;
-    background: transparent;
-}
-
-.dual-range__input::-webkit-slider-thumb {
-    width: 19px;
-    height: 19px;
-    margin-top: -7px;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.22);
-    pointer-events: auto;
-    cursor: grab;
-    appearance: none;
-    -webkit-appearance: none;
-}
-
-.dual-range__input::-moz-range-track {
-    height: 5px;
-    background: transparent;
-}
-
-.dual-range__input::-moz-range-thumb {
-    width: 17px;
-    height: 17px;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    background: var(--green);
-    pointer-events: auto;
-    cursor: grab;
-}
-
-.range-scale {
-    margin-top: -2px;
-    display: flex;
-    justify-content: space-between;
-    color: #7b847d;
-    font-size: 10px;
-}
-
-.sort-select {
-    width: 100%;
-    height: 42px;
-    padding: 0 12px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--text);
-    background: #fff;
-    outline: none;
-}
-
-.sort-select:focus {
-    border-color: var(--green);
-    box-shadow: 0 0 0 3px rgba(47, 143, 70, 0.1);
-}
-
-.filter-actions {
-    margin-top: 15px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-}
-
-.apply-button,
-.reset-button {
-    min-height: 42px;
-    padding: 0 12px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 800;
-    cursor: pointer;
-}
-
-.apply-button {
-    border: 0;
-    color: #fff;
-    background: var(--green);
-}
-
-.apply-button:hover {
-    background: var(--green-dark);
-}
-
-.reset-button {
-    border: 1px solid var(--border);
-    color: #344139;
-    background: #fff;
-}
-
-
-/* Search icon and enhanced filter layout */
-.search #home-filter-toggle {
-    order: -1;
-    width: 44px;
-    height: 40px;
-    padding: 0;
-    margin: 0 8px 0 0;
-    flex: 0 0 44px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 8px;
-    color: var(--green, #2f8f46);
-    background: transparent;
-    cursor: pointer;
-}
-.search #home-filter-toggle:hover,
-.search #home-filter-toggle[aria-expanded="true"] {
-    background: #eef8f0;
-}
-.search #home-filter-toggle:focus-visible {
-    outline: 2px solid var(--green, #2f8f46);
-    outline-offset: 2px;
-}
-.catalog-layout.filters-enhanced .filter > summary { display: none; }
-.catalog-layout.filters-enhanced .catalog-sidebar[hidden] { display: none; }
-.catalog-layout.filters-closed { grid-template-columns: minmax(0, 1fr); }
-.catalog-layout.filters-enhanced .catalog-sidebar {
-    width: 320px;
-    max-width: 100%;
-    min-width: 0;
-}
-.catalog-layout.filters-enhanced .filter { width: 100%; }
-.catalog-layout.filters-enhanced .filter-panel {
-    position: static;
-    inset: auto;
-    width: 100%;
-    margin-top: 0;
-}
-@media (max-width: 1000px) {
-    .catalog-layout { grid-template-columns: minmax(0, 1fr); }
-    .catalog-layout .catalog-sidebar {
-        position: static;
-        width: 100%;
-        max-width: 100%;
-    }
-    .catalog-layout .filter,
-    .catalog-layout .filter[open] { width: 100%; }
-    .catalog-layout .filter-panel { max-height: none; overflow: visible; }
-}
-
-.home-add-to-cart { margin-top: 12px; }
-.home-add-to-cart .apply-button { width: 100%; gap: 8px; }
-.home-add-to-cart .apply-button:disabled { opacity: .65; cursor: wait; }
-.home-cart-message { margin: 8px 0 0; font-size: 13px; line-height: 1.4; }
-.home-cart-message:empty { display: none; }
-.home-cart-message[data-state="error"] { color: #a12323; }
-.home-cart-message[data-state="success"] { color: #246f36; }
-
-
-/* The climate help lives on Home product cards. */
-.home-climate-value { display: flex; align-items: center; gap: 8px; }
-.home-climate-help { display: inline-flex; flex-shrink: 0; }
-.home-climate-help-button {
-    display: grid; place-items: center; width: 32px; height: 32px;
-    padding: 0; border: 0; border-radius: 50%; background: transparent;
-    color: inherit; font: inherit; font-size: 23px; cursor: help;
-}
-.home-climate-help-button:hover { background: rgba(0, 0, 0, .06); }
-.home-climate-help-button:focus-visible { outline: 3px solid #246f36; outline-offset: 2px; }
-.home-climate-tooltip[hidden] { display: none !important; }
-.home-climate-tooltip {
-    position: fixed; z-index: 1000; box-sizing: border-box;
-    display: block; width: min(300px, calc(100vw - 32px)); padding: 16px;
-    border: 1px solid #e1e7e2; border-radius: 12px;
-    color: #17211a; background: #fff;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, .14);
-    font-family: Inter, Arial, Helvetica, sans-serif;
-    font-size: 14px; line-height: 1.5;
-}
-.home-climate-tooltip > strong { display: block; margin-bottom: 8px; font-size: 15px; }
-.home-climate-tooltip > span { display: block; color: #566059; }
-.home-climate-tooltip > span + span { margin-top: 6px; }
-.climate-summary:not(.low):not(.medium):not(.high) {
-    color: #475149; background: #f1f3f2; border-color: #dce2dd;
-}
-
-</style>
+    <link rel="stylesheet" href="../Style/HomeStyle.css?v=20261031">
+    <script src="../Js/AddToFav.js" defer></script>
+    <script src="../Js/Home.js?v=20261031" defer></script>
 </head>
 
 <body>
@@ -571,63 +110,64 @@ $productSections = [
 <!-- HEADER -->
 <header class="site-header">
     <div class="topbar">
-
         <a class="brand" href="./home.php">
-            <span
-                class="brand-mark"
-                aria-hidden="true"
-            ></span>
-
+            <span class="brand-mark" aria-hidden="true"></span>
             <span>Flash Food</span>
         </a>
 
         <nav class="main-nav" aria-label="Main navigation">
-            <a
-                class="nav-link active"
-                href="./home.php"
-            >
-                Home
-            </a>
-
-
-            <a class="nav-link" href="#about">
-                About us
-            </a>
+            <a class="nav-link active" href="./home.php">Home</a>
+            <a class="nav-link" href="#about">About us</a>
         </nav>
+
         <div class="header-actions">
-            <a class="header-link" href="./fav.php" id="wishlist-link" aria-label="Wishlist">
-                <svg id="wishlist-icon" class="header-action-icon" xmlns="http://www.w3.org/2000/svg"
-                     width="22" height="22" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                     stroke-linejoin="round" aria-hidden="true" focusable="false">
-                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z" />
+            <a class="header-link" href="./fav.php"
+               id="wishlist-link" aria-label="Wishlist">
+                <svg id="wishlist-icon" class="header-action-icon"
+                     xmlns="http://www.w3.org/2000/svg"
+                     width="22" height="22" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/>
                 </svg>
                 <span>Wishlist</span>
             </a>
-            <a class="header-link" href="./inkobLister.php" id="cart-link" aria-label="Cart">
-                <svg id="cart-icon" class="header-action-icon" xmlns="http://www.w3.org/2000/svg"
-                     width="22" height="22" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                     stroke-linejoin="round" aria-hidden="true" focusable="false">
-                    <path d="M3 3h2l3 12h11l2-8H6" /><circle cx="9" cy="20" r="1" /><circle cx="18" cy="20" r="1" />
+
+            <a class="header-link" href="./inkobLister.php"
+               id="cart-link" aria-label="Cart">
+                <svg id="cart-icon" class="header-action-icon"
+                     xmlns="http://www.w3.org/2000/svg"
+                     width="22" height="22" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 3h2l3 12h11l2-8H6"/>
+                    <circle cx="9" cy="20" r="1"/>
+                    <circle cx="18" cy="20" r="1"/>
                 </svg>
                 <span>Cart</span>
-                <span class="cart-count"><?= $cart_count ?></span>
+                <span class="cart-count"><?= (int)$cart_count ?></span>
             </a>
-            <a class="header-link" href="../profil/profil.php" id="profile-link" aria-label="Profile">
-                <svg id="profile-icon" class="header-action-icon" xmlns="http://www.w3.org/2000/svg"
-                     width="22" height="22" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
-                     stroke-linejoin="round" aria-hidden="true" focusable="false">
-                    <circle cx="12" cy="8" r="4" /><path d="M4 21v-2a8 8 0 0 1 16 0v2" />
+
+            <a class="header-link" href="../profil/profil.php"
+               id="profile-link" aria-label="Profile">
+                <svg id="profile-icon" class="header-action-icon"
+                     xmlns="http://www.w3.org/2000/svg"
+                     width="22" height="22" viewBox="0 0 24 24"
+                     fill="none" stroke="currentColor"
+                     stroke-width="1.8" stroke-linecap="round"
+                     stroke-linejoin="round" aria-hidden="true">
+                    <circle cx="12" cy="8" r="4"/>
+                    <path d="M4 21v-2a8 8 0 0 1 16 0v2"/>
                 </svg>
                 <span>
-    <?php if ($loggedInUser !== null): ?>
-        Hi, <?= h($loggedInUser['name']) ?>
-    <?php else: ?>
-        Profile
-    <?php endif; ?>
-</span>
+                    <?php if ($loggedInUser !== null): ?>
+                        Hi, <?= h($loggedInUser['name']) ?>
+                    <?php else: ?>
+                        Profile
+                    <?php endif; ?>
+                </span>
             </a>
         </div>
     </div>
@@ -636,18 +176,11 @@ $productSections = [
 <!-- HERO -->
 <section class="hero">
     <div class="hero-content">
-
-
         <h1>
             Shop smarter.
             <br>
             <span>Choose greener.</span>
         </h1>
-
-
-
-
-
     </div>
 </section>
 
@@ -655,136 +188,88 @@ $productSections = [
 
 <!-- TYPE TABS -->
 <div class="tabs">
-    <a
-        class="pill <?= $type === 'all' ? 'is-active' : '' ?>"
-        href="?type=all"
-    >
-        All
-    </a>
+    <a class="pill <?= $type === 'all' ? 'is-active' : '' ?>"
+       href="?type=all">All</a>
 
-    <a
-        class="pill <?= $type === 'restaurant' ? 'is-active' : '' ?>"
-        href="?type=restaurant"
-    >
-        Restaurants
-    </a>
+    <a class="pill <?= $type === 'restaurant' ? 'is-active' : '' ?>"
+       href="?type=restaurant">Restaurants</a>
 
-    <a
-        class="pill <?= $type === 'market' ? 'is-active' : '' ?>"
-        href="?type=market"
-    >
-        Supermarket
-    </a>
+    <a class="pill <?= $type === 'market' ? 'is-active' : '' ?>"
+       href="?type=market">Supermarket</a>
 </div>
 
 <!-- SEARCH -->
 <section class="search-wrap">
-    <form
-        class="search"
-        method="get"
-        action="../Api/smart_search.php"
-    >
-        <input
-            type="hidden"
-            name="type"
-            value="<?= h($type) ?>"
-        >
+    <form class="search" method="get"
+          action="../Api/smart_search.php">
 
-       <button
-    type="button"
-    class="home-filter-toggle"
-    id="home-filter-toggle"
-    aria-label="Show filters"
-    aria-controls="product-filters"
-    aria-expanded="false"
-    title="Filters"
->
-    <svg
-        width="22"
-        height="22"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="1.8"
-        stroke-linecap="round"
-        aria-hidden="true"
-    >
-        <path d="M4 6h9m4 0h3M4 12h3m4 0h9M4 18h9m4 0h3"/>
-        <circle cx="15" cy="6" r="2"/>
-        <circle cx="9" cy="12" r="2"/>
-        <circle cx="15" cy="18" r="2"/>
-    </svg>
-</button>
+        <input type="hidden" name="type" value="<?= h($type) ?>">
 
-        <input
-            type="text"
-            name="q"
-            aria-label="Search products and meals"
-            placeholder="Search for products or meals..."
-            value="<?= h($query) ?>"
-            autocomplete="off"
-        >
+        <button type="button"
+                class="home-filter-toggle"
+                id="home-filter-toggle"
+                aria-label="Show filters"
+                aria-controls="product-filters"
+                aria-expanded="false"
+                title="Filters">
+            <svg width="22" height="22" viewBox="0 0 24 24"
+                 fill="none" stroke="currentColor"
+                 stroke-width="1.8" stroke-linecap="round"
+                 aria-hidden="true">
+                <path d="M4 6h9m4 0h3M4 12h3m4 0h9M4 18h9m4 0h3"/>
+                <circle cx="15" cy="6" r="2"/>
+                <circle cx="9" cy="12" r="2"/>
+                <circle cx="15" cy="18" r="2"/>
+            </svg>
+        </button>
 
-<button type="submit">Search</button>
+        <input type="text"
+               name="q"
+               aria-label="Search products and meals"
+               placeholder="Search for products or meals..."
+               value="<?= h($query) ?>"
+               autocomplete="off">
+
+        <button type="submit">Search</button>
     </form>
 </section>
 
-<!-- FILTERS + PRODUCTS -->
+<!-- FILTERS AND PRODUCTS -->
 <div class="catalog-layout">
 
     <!-- FILTER SIDEBAR -->
     <aside class="catalog-sidebar">
         <details class="filter" id="product-filters">
-
             <summary class="filter-btn">
                 <span class="filter-button-mark"></span>
                 Filters
             </summary>
 
-
-
             <div class="filter-panel">
                 <form method="get" action="home.php">
-
-                    <input
-                        type="hidden"
-                        name="type"
-                        value="<?= h($type) ?>"
-                    >
+                    <input type="hidden" name="type" value="<?= h($type) ?>">
 
                     <?php if ($query !== ''): ?>
-                        <input
-                            type="hidden"
-                            name="q"
-                            value="<?= h($query) ?>"
-                        >
+                        <input type="hidden" name="q" value="<?= h($query) ?>">
                     <?php endif; ?>
 
                     <div class="filter-title">
                         <h3>Filter products</h3>
-
-                        <p>
-                            Adjust the sliders or
-                            choose categories below.
-                        </p>
+                        <p>Adjust the sliders or choose categories below.</p>
                     </div>
 
                     <!-- PRICE -->
                     <section class="filter-group">
                         <div class="filter-section-header">
                             <h4>Price (DKK)</h4>
-
                             <span class="range-value">
                                 <strong id="priceMinLabel">
                                     <?= $pmin !== null ? (int)$pmin : 0 ?>
                                 </strong>
-
                                 <span>–</span>
-
                                 <strong id="priceMaxLabel">
                                     <?= $pmax !== null ? (int)$pmax : 500 ?>
                                 </strong>
-
                                 DKK
                             </span>
                         </div>
@@ -801,12 +286,9 @@ $productSections = [
                                 min="0"
                                 max="500"
                                 step="1"
-                                value="<?= h(
-                                    $pmin !== null
-                                        ? max(0, min(500, $pmin))
-                                        : 0
-                                ) ?>"
-                            >
+                                value="<?= h($pmin !== null
+                                    ? max(0, min(500, $pmin))
+                                    : 0) ?>">
 
                             <input
                                 class="dual-range__input dual-range__input--max"
@@ -817,12 +299,9 @@ $productSections = [
                                 min="0"
                                 max="500"
                                 step="1"
-                                value="<?= h(
-                                    $pmax !== null
-                                        ? max(0, min(500, $pmax))
-                                        : 500
-                                ) ?>"
-                            >
+                                value="<?= h($pmax !== null
+                                    ? max(0, min(500, $pmax))
+                                    : 500) ?>">
                         </div>
 
                         <div class="range-scale">
@@ -835,18 +314,14 @@ $productSections = [
                     <section class="filter-group">
                         <div class="filter-section-header">
                             <h4>Weight (g)</h4>
-
                             <span class="range-value">
                                 <strong id="weightMinLabel">
                                     <?= $wmin !== null ? (int)$wmin : 0 ?>
                                 </strong>
-
                                 <span>–</span>
-
                                 <strong id="weightMaxLabel">
                                     <?= $wmax !== null ? (int)$wmax : 5000 ?>
                                 </strong>
-
                                 g
                             </span>
                         </div>
@@ -863,12 +338,9 @@ $productSections = [
                                 min="0"
                                 max="5000"
                                 step="50"
-                                value="<?= h(
-                                    $wmin !== null
-                                        ? max(0, min(5000, $wmin))
-                                        : 0
-                                ) ?>"
-                            >
+                                value="<?= h($wmin !== null
+                                    ? max(0, min(5000, $wmin))
+                                    : 0) ?>">
 
                             <input
                                 class="dual-range__input dual-range__input--max"
@@ -879,12 +351,9 @@ $productSections = [
                                 min="0"
                                 max="5000"
                                 step="50"
-                                value="<?= h(
-                                    $wmax !== null
-                                        ? max(0, min(5000, $wmax))
-                                        : 5000
-                                ) ?>"
-                            >
+                                value="<?= h($wmax !== null
+                                    ? max(0, min(5000, $wmax))
+                                    : 5000) ?>">
                         </div>
 
                         <div class="range-scale">
@@ -898,91 +367,88 @@ $productSections = [
                         <h4 class="group-title">Diet</h4>
 
                         <label class="filter-row">
-                            <input
-                                type="checkbox"
-                                name="veg"
-                                value="1"
-                                <?= $onlyVeg ? 'checked' : '' ?>
-                            >
-
+                            <input type="checkbox"
+                                   name="veg"
+                                   value="1"
+                                   <?= $onlyVeg ? 'checked' : '' ?>>
                             <span>Vegetarian only</span>
                         </label>
 
                         <label class="filter-row">
-                            <input
-                                type="checkbox"
-                                name="meat"
-                                value="1"
-                                <?= $onlyMeat ? 'checked' : '' ?>
-                            >
-
+                            <input type="checkbox"
+                                   name="meat"
+                                   value="1"
+                                   <?= $onlyMeat ? 'checked' : '' ?>>
                             <span>Meat products only</span>
                         </label>
                     </section>
 
-                    <!-- CLIMATE -->
+                    <!-- CLIMATE FILTERS -->
                     <section class="filter-group">
-                        <h4 class="group-title">
-                            CO₂e emissions
-                        </h4>
+                        <h4 class="group-title">CO₂e emissions</h4>
 
                         <label class="filter-row">
-                            <input
-                                type="checkbox"
-                                name="lowco2"
-                                value="1"
-                                <?= $lowCO2 ? 'checked' : '' ?>
-                            >
+                            <input type="checkbox"
+                                   name="lowco2"
+                                   value="1"
+                                   <?= $lowCO2 ? 'checked' : '' ?>>
 
                             <span class="impact-dot impact-low"></span>
+
                             <span class="impact-filter-copy">
                                 <strong>Low CO₂e emissions</strong>
-                                <small>Up to <?= h((string)CO2_LOW_MAX) ?> kg CO₂e/kg (prototype category)</small>
+                                <small>
+                                    Up to <?= h((string)CO2_LOW_MAX) ?>
+                                    kg CO₂e/kg (prototype category)
+                                </small>
                             </span>
                         </label>
 
                         <label class="filter-row">
-                            <input
-                                type="checkbox"
-                                name="midco2"
-                                value="1"
-                                <?= $midCO2 ? 'checked' : '' ?>
-                            >
+                            <input type="checkbox"
+                                   name="midco2"
+                                   value="1"
+                                   <?= $midCO2 ? 'checked' : '' ?>>
 
                             <span class="impact-dot impact-medium"></span>
+
                             <span class="impact-filter-copy">
                                 <strong>Medium CO₂e emissions</strong>
-                                <small>Above <?= h((string)CO2_LOW_MAX) ?> and up to <?= h((string)CO2_MEDIUM_MAX) ?> kg CO₂e/kg (prototype category)</small>
+                                <small>
+                                    Above <?= h((string)CO2_LOW_MAX) ?>
+                                    and up to <?= h((string)CO2_MEDIUM_MAX) ?>
+                                    kg CO₂e/kg (prototype category)
+                                </small>
                             </span>
                         </label>
 
                         <label class="filter-row">
-                            <input
-                                type="checkbox"
-                                name="highco2"
-                                value="1"
-                                <?= $highCO2 ? 'checked' : '' ?>
-                            >
+                            <input type="checkbox"
+                                   name="highco2"
+                                   value="1"
+                                   <?= $highCO2 ? 'checked' : '' ?>>
 
                             <span class="impact-dot impact-high"></span>
+
                             <span class="impact-filter-copy">
                                 <strong>High CO₂e emissions</strong>
-                                <small>Above <?= h((string)CO2_MEDIUM_MAX) ?> kg CO₂e/kg (prototype category)</small>
+                                <small>
+                                    Above <?= h((string)CO2_MEDIUM_MAX) ?>
+                                    kg CO₂e/kg (prototype category)
+                                </small>
                             </span>
                         </label>
 
                         <p class="climate-filter-note">
-                            Prototype categories use emissions per kg. Meal values are displayed per serving or box.
+                            Prototype categories use emissions per kg.
+                            Meal values are displayed per serving or box.
                         </p>
 
                         <label class="filter-row">
-                            <input
-                                type="checkbox"
-                                name="local"
-                                value="1"
-                                <?= $localOnly ? 'checked' : '' ?>
-                            >
-
+                            <input type="checkbox"
+                                   name="local"
+                                   value="1"
+                                   <?= $localOnly ? 'checked' : '' ?>>
                             <span>Local</span>
                         </label>
                     </section>
@@ -992,52 +458,37 @@ $productSections = [
                         <h4 class="group-title">Sort by</h4>
 
                         <select class="sort-select" name="sort">
-                            <option
-                                value="eco"
-                                <?= $sort === 'eco' ? 'selected' : '' ?>
-                            >
+                            <option value="eco"
+                                <?= $sort === 'eco' ? 'selected' : '' ?>>
                                 Eco first
                             </option>
 
-                            <option
-                                value="price_asc"
-                                <?= $sort === 'price_asc' ? 'selected' : '' ?>
-                            >
+                            <option value="price_asc"
+                                <?= $sort === 'price_asc' ? 'selected' : '' ?>>
                                 Price low → high
                             </option>
 
-                            <option
-                                value="price_desc"
-                                <?= $sort === 'price_desc' ? 'selected' : '' ?>
-                            >
+                            <option value="price_desc"
+                                <?= $sort === 'price_desc' ? 'selected' : '' ?>>
                                 Price high → low
                             </option>
 
-                            <option
-                                value="newest"
-                                <?= $sort === 'newest' ? 'selected' : '' ?>
-                            >
+                            <option value="newest"
+                                <?= $sort === 'newest' ? 'selected' : '' ?>>
                                 Newest
                             </option>
                         </select>
                     </section>
 
                     <div class="filter-actions">
-                        <button
-                            class="apply-button"
-                            type="submit"
-                        >
+                        <button class="apply-button" type="submit">
                             Apply filters
                         </button>
 
-                        <a
-                            class="reset-button"
-                            href="home.php"
-                        >
+                        <a class="reset-button" href="home.php">
                             Reset
                         </a>
                     </div>
-
                 </form>
             </div>
         </details>
@@ -1045,11 +496,8 @@ $productSections = [
 
     <!-- PRODUCTS -->
     <main class="container" id="products">
-
         <div class="section-heading">
-            <div>
-
-            </div>
+            <div></div>
 
             <p class="result-count">
                 <?= count($items) ?>
@@ -1057,15 +505,15 @@ $productSections = [
             </p>
         </div>
 
-
-
         <?php if (empty($items)): ?>
 
             <div class="no-results">
                 <div class="no-results-mark"></div>
                 <h3>No products found</h3>
                 <p>No products match your selected filters.</p>
-                <a class="reset-button" href="home.php">Reset filters</a>
+                <a class="reset-button" href="home.php">
+                    Reset filters
+                </a>
             </div>
 
         <?php else: ?>
@@ -1073,175 +521,265 @@ $productSections = [
             <div class="product-sections">
                 <?php foreach ($productSections as $section): ?>
                     <?php if (!empty($section['items'])): ?>
-                        <section class="product-section" id="<?= h($section['id']) ?>">
+
+                        <section class="product-section"
+                                 id="<?= h($section['id']) ?>">
+
                             <header class="product-section-header">
                                 <div>
                                     <h3><?= h($section['title']) ?></h3>
                                     <p><?= h($section['description']) ?></p>
                                 </div>
+
                                 <span class="section-count">
                                     <?= count($section['items']) ?>
-                                    <?= count($section['items']) === 1 ? 'product' : 'products' ?>
+                                    <?= count($section['items']) === 1
+                                        ? 'product'
+                                        : 'products' ?>
                                 </span>
                             </header>
 
-                            <div
-                                class="grid-cards"
-                                aria-label="<?= h($section['title']) ?>"
-                            >
-                                <?php foreach ($section['items'] as $row): ?>
+                            <div class="grid-cards"
+                                 aria-label="<?= h($section['title']) ?>">
 
+                                <?php foreach ($section['items'] as $row): ?>
                                     <?php
                                     $sig = is_array($row['_sig'] ?? null)
                                         ? $row['_sig']
-                                         : [];
+                                        : [];
+
                                     $co2Signal = is_array($sig['co2'] ?? null)
                                         ? $sig['co2']
                                         : [];
+
                                     $rank = (int)($co2Signal['rank'] ?? 0);
 
                                     $co2Class = match ($rank) {
                                         1 => 'low',
                                         2 => 'medium',
                                         3 => 'high',
-                                        default => ''
+                                        default => '',
                                     };
 
                                     $climateLabel = match ($rank) {
                                         1 => 'Low CO₂e emissions',
                                         2 => 'Medium CO₂e emissions',
                                         3 => 'High CO₂e emissions',
-                                        default => 'CO₂e emissions'
+                                        default => 'CO₂e emissions',
                                     };
 
                                     $dotClass = match ($rank) {
                                         1 => 'impact-low',
                                         2 => 'impact-medium',
                                         3 => 'impact-high',
-                                        default => ''
+                                        default => '',
                                     };
 
-                                    $climate = climate_metrics($row, $sig, $rank);
-                                    $instantContext = $instantComparisons->context($climate, (int)$row['id']);
-                                    $instantText = $instantComparisons->read($instantContext)['text'];
+                                    $climate = climate_metrics(
+                                        $row,
+                                        $sig,
+                                        $rank
+                                    );
 
-                                    /* Link til netop dette produkt */
-                                    $productUrl = 'product.php?id=' . (int)$row['id'];
+                                    $instantContext = $instantComparisons
+                                        ->context($climate, (int)$row['id']);
+
+                                    $instantText = $instantComparisons
+                                        ->read($instantContext)['text'];
+
+                                    $productUrl = 'product.php?id='
+                                        . (int)$row['id'];
+
+                                    $tooltipId = 'climate-tip-'
+                                        . $section['id']
+                                        . '-'
+                                        . (int)$row['id'];
+
+                                    $weight = $sig['weight_g'] ?? null;
+
+                                    $titleHasWeight = preg_match(
+                                        '/\d+(?:[.,]\d+)?\s*(?:kg|g|ml|l)\b/i',
+                                        (string)$row['title']
+                                    ) === 1;
                                     ?>
 
                                     <article class="card">
 
                                         <!-- FAVOURITE -->
-                                        <form
-                                            class="card-favourite add-to-fav"
-                                            action="../Api/AddFav.php"
-                                            method="post"
-                                        >
-                                            <input
-                                                type="hidden"
-                                                name="product_id"
-                                                value="<?= (int)$row['id'] ?>"
-                                            >
+                                        <form class="card-favourite add-to-fav"
+                                              action="../Api/AddFav.php"
+                                              method="post">
 
-                                            <input type="hidden" name="csrf_token" value="<?= h(csrfToken()) ?>">
+                                            <input type="hidden"
+                                                   name="product_id"
+                                                   value="<?= (int)$row['id'] ?>">
 
-                                            <button
-                                                type="submit"
-                                                aria-label="Add to wishlist"
-                                            >
-                                                <svg
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    aria-hidden="true"
-                                                    focusable="false"
-                                                >
+                                            <input type="hidden"
+                                                   name="csrf_token"
+                                                   value="<?= h(csrfToken()) ?>">
+
+                                            <button type="submit"
+                                                    aria-label="Add to wishlist">
+                                                <svg viewBox="0 0 24 24"
+                                                     fill="none"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     aria-hidden="true">
                                                     <path
                                                         d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"
                                                         stroke="currentColor"
                                                         stroke-width="1.8"
                                                         stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                    />
+                                                        stroke-linejoin="round"/>
                                                 </svg>
                                             </button>
                                         </form>
+                                        <!-- PRODUCT IMAGE -->
+                                        <a class="product-visual"
+                                           href="<?= h($productUrl) ?>"
+                                           aria-label="View details for <?= h($row['title']) ?>">
 
-                                        <!-- KLIK PÅ BILLEDET ÅBNER PRODUKTET -->
-                                        <a
-                                            class="product-visual"
-                                            href="<?= h($productUrl) ?>"
-                                            aria-label="View details for <?= h($row['title']) ?>"
-                                        >
                                             <?php if (!empty($row['image'])): ?>
-
                                                 <img
                                                     src="../Style/Images/products/<?= h($row['image']) ?>"
                                                     alt="<?= h($row['title']) ?>"
-                                                    class="product-image"
-                                                >
-
+                                                    class="product-image">
                                             <?php else: ?>
-
                                                 <div class="product-placeholder">
-                                                    <?= h(
-                                                        product_initial(
-                                                            (string)$row['title']
-                                                        )
-                                                    ) ?>
+                                                    <?= h(product_initial(
+                                                        (string)$row['title']
+                                                    )) ?>
                                                 </div>
-
                                             <?php endif; ?>
                                         </a>
 
                                         <div class="product-content">
+
                                             <h4 class="product-title-row">
-                                                <a class="product-name-link" href="<?= h($productUrl) ?>"><?= h($row['title']) ?></a>
+                                                <a class="product-name-link"
+                                                   href="<?= h($productUrl) ?>">
+                                                    <?= h($row['title']) ?>
+                                                </a>
                                             </h4>
-                                            <div class="merchant-name"><?= h($row['merchant']) ?></div>
-                                            <div class="price"><?= number_format((float)$row['price'], 2, ',', '.') ?> kr.</div>
-                                            <?php
-                                            $weight = $sig['weight_g'] ?? null;
-                                            $titleHasWeight = preg_match('/\d+(?:[.,]\d+)?\s*(?:kg|g|ml|l)\b/i', (string)$row['title']) === 1;
-                                            ?>
-                                            <?php if (($weight !== null && !$titleHasWeight) || !empty($sig['local'])): ?>
+
+                                            <div class="merchant-name">
+                                                <?= h($row['merchant']) ?>
+                                            </div>
+
+                                            <div class="price">
+                                                <?= number_format(
+                                                    (float)$row['price'],
+                                                    2,
+                                                    ',',
+                                                    '.'
+                                                ) ?> kr.
+                                            </div>
+
+                                            <!-- PRODUCT METADATA -->
+                                            <?php if (
+                                                ($weight !== null && !$titleHasWeight)
+                                                || !empty($sig['local'])
+                                            ): ?>
                                                 <div class="product-meta">
-                                                    <?php if ($weight !== null && !$titleHasWeight): ?>
-                                                        <span><?= (int)$weight ?> g</span>
+                                                    <?php if (
+                                                        $weight !== null
+                                                        && !$titleHasWeight
+                                                    ): ?>
+                                                        <span>
+                                                            <?= (int)$weight ?> g
+                                                        </span>
                                                     <?php endif; ?>
+
                                                     <?php if (!empty($sig['local'])): ?>
-                                                        <span class="sig local">Local</span>
+                                                        <span class="sig local">
+                                                            Local
+                                                        </span>
                                                     <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
-                                            <div class="climate-summary <?= h($co2Class) ?>" aria-label="CO₂e emissions">
+
+                                            <!-- CLIMATE INFORMATION -->
+                                            <div class="climate-summary <?= h($co2Class) ?>"
+                                                 aria-label="CO₂e emissions">
+
                                                 <span class="climate-label">
-                                                    <span class="impact-dot <?= h($dotClass) ?>" aria-hidden="true"></span>
+                                                    <span
+                                                        class="impact-dot <?= h($dotClass) ?>"
+                                                        aria-hidden="true"></span>
                                                     <?= h($climateLabel) ?>
                                                 </span>
+
                                                 <?php if ($climate['available']): ?>
                                                     <div class="home-climate-value">
-                                                        <strong><?= h($climate['formatted']) ?> kg CO₂e <span class="climate-unit"><?= h($climate['unit']) ?></span></strong>
+                                                        <strong>
+                                                            <?= h($climate['formatted']) ?>
+                                                            kg CO₂e
+                                                            <span class="climate-unit">
+                                                                <?= h($climate['unit']) ?>
+                                                            </span>
+                                                        </strong>
+
                                                         <span class="home-climate-help">
-                                                            <button type="button" class="home-climate-help-button" data-product-id="<?= (int)$row['id'] ?>"
+                                                            <button
+                                                                type="button"
+                                                                class="home-climate-help-button"
+                                                                data-product-id="<?= (int)$row['id'] ?>"
                                                                 aria-label="Explain CO₂e for <?= h($row['title']) ?>"
                                                                 aria-expanded="false"
-                                                                aria-describedby="<?= h('climate-tip-' . $section['id'] . '-' . (int)$row['id']) ?>">ⓘ</button>
-                                                                <span
-    class="home-climate-tooltip"
-    role="tooltip"
-    hidden
-    id="<?= h('climate-tip-' . $section['id'] . '-' . (int)$row['id']) ?>"
-><?= h($instantText) ?></span>
+                                                                aria-describedby="<?= h($tooltipId) ?>">
+                                                                ⓘ
+                                                            </button>
+
+                                                            <span
+                                                                class="home-climate-tooltip"
+                                                                role="tooltip"
+                                                                hidden
+                                                                id="<?= h($tooltipId) ?>">
+                                                                <?= h($instantText) ?>
+                                                            </span>
                                                         </span>
                                                     </div>
+
                                                     <?php if ($climate['is_example']): ?>
-                                                        <small class="example-note">Example value</small>
+                                                        <small class="example-note">
+                                                            Example value
+                                                        </small>
                                                     <?php endif; ?>
+
                                                 <?php else: ?>
-                                                    <small>Information not available</small>
+                                                    <small>
+                                                        Information not available
+                                                    </small>
                                                 <?php endif; ?>
                                             </div>
+
+                                            <!-- ADD TO CART -->
+                                            <form class="home-add-to-cart"
+                                                  action="../Api/add_to_cart.php"
+                                                  method="post">
+
+                                                <input type="hidden"
+                                                       name="product_id"
+                                                       value="<?= (int)$row['id'] ?>">
+
+                                                <input type="hidden"
+                                                       name="qty"
+                                                       value="1">
+
+                                                <input type="hidden"
+                                                       name="csrf_token"
+                                                       value="<?= h(csrfToken()) ?>">
+
+                                                <button class="apply-button"
+                                                        type="submit">
+                                                    &#128722;
+                                                    <span class="home-cart-button-label">
+                                                        Add to cart
+                                                    </span>
+                                                </button>
+
+                                                <p class="home-cart-message"
+                                                   aria-live="polite"></p>
+                                            </form>
 
                                         </div>
                                     </article>
@@ -1249,6 +787,7 @@ $productSections = [
                                 <?php endforeach; ?>
                             </div>
                         </section>
+
                     <?php endif; ?>
                 <?php endforeach; ?>
             </div>
@@ -1256,10 +795,6 @@ $productSections = [
         <?php endif; ?>
     </main>
 </div>
-
-
-
-
 
 </body>
 </html>

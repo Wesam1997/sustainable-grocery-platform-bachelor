@@ -8,3 +8,8 @@ Home/homekopi
 /vendor/
 /OllamaLlmClient_best80.php
 /old_OllamaLlmClient.php
+.phpunit.result.cache
+
+*.backup.css
+
+*.backup.php

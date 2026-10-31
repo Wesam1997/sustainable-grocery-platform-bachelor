@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true">
+
+    <testsuites>
+        <testsuite name="Unit Tests">
+            <directory>tests</directory>
+            <exclude>tests/MysqliOrderRepositoryTest.php</exclude>
+        </testsuite>
+
+        <testsuite name="Database Integration Tests">
+            <file>tests/MysqliOrderRepositoryTest.php</file>
+        </testsuite>
+    </testsuites>
+
+    <php>
+        <env name="FLASHFOOD_TEST_DB_NAME" value="flashfood_test"/>
+    </php>
+
+</phpunit>
+
