@@ -1,74 +1,129 @@
-document.addEventListener('submit', async (e) => {
-  const form = e.target;
 
-  if (!form.matches('form.add-to-cart')) return;
+/* ==========================================
+   FLASH FOOD - ADD TO CART
+   ========================================== */
 
-  e.preventDefault();
+'use strict';
 
-  const btn = form.querySelector('button[type="submit"]');
+document.addEventListener('submit', async (event) => {
 
-  if (btn?.disabled) return;
+    const form = event.target;
 
-  const fd = new FormData(form);
-  fd.set('ajax', '1');
-
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = 'Adding...';
-  }
-
-  try {
-    const res = await fetch(form.action, {
-      method: 'POST',
-      body: fd,
-      headers: {
-        Accept: 'application/json'
-      }
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || !data?.ok) {
-      throw new Error(
-        data?.error || 'Could not add the item.'
-      );
+    if (
+        !(form instanceof HTMLFormElement) ||
+        !form.matches('form.add-to-cart')
+    ) {
+        return;
     }
 
-    document.querySelectorAll('.cart-count').forEach((counter) => {
-      if (typeof data.count !== 'undefined') {
-        counter.textContent = data.count;
-      }
-    });
+    event.preventDefault();
 
-    // Shake the cart after a successful addition.
-    const cartIcon = document.getElementById('cart-icon');
-if (cartIcon) {
-  cartIcon.classList.remove('is-shaking');
+    const button = form.querySelector(
+        'button[type="submit"]'
+    );
 
-  // Force the browser to register the reset.
-  void cartIcon.getBoundingClientRect();
-
-  cartIcon.classList.add('is-shaking');
-
-  cartIcon.addEventListener('animationend', () => {
-    cartIcon.classList.remove('is-shaking');
-  }, { once: true });
-}
-
-    if (btn) {
-      btn.textContent = 'Added to cart';
-
-      setTimeout(() => {
-        btn.textContent = 'Add to cart';
-        btn.disabled = false;
-      }, 1200);
-    }
-  } catch (err) {
-    if (btn) {
-      btn.textContent = 'Add to cart';
-      btn.disabled = false;
+    if (!button || button.disabled) {
+        return;
     }
 
-    alert('Could not add the item to your cart: ' + err.message);
-  }
+    // Only change the text, not the SVG icon.
+    const label = button.querySelector('span') || button;
+
+    const data = new FormData(form);
+
+    data.set('ajax', '1');
+
+    button.disabled = true;
+
+    label.textContent = 'Adding...';
+
+
+    try {
+
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: data,
+            headers: {
+                Accept: 'application/json'
+            }
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || result?.ok !== true) {
+            throw new Error(
+                result?.error || 'Could not add the item.'
+            );
+        }
+
+
+        /* UPDATE CART COUNT */
+
+        if (result.count !== undefined) {
+
+            document.querySelectorAll(
+                '.cart-count'
+            ).forEach((element) => {
+
+                element.textContent =
+                    String(result.count);
+
+            });
+
+        }
+
+
+        /* ANIMATE CART ICON */
+
+        const cartIcon = document.getElementById(
+            'cart-icon'
+        );
+
+        if (cartIcon) {
+
+            cartIcon.classList.remove('is-shaking');
+
+            void cartIcon.getBoundingClientRect();
+
+            cartIcon.classList.add('is-shaking');
+
+            cartIcon.addEventListener(
+                'animationend',
+                () => {
+                    cartIcon.classList.remove(
+                        'is-shaking'
+                    );
+                },
+                { once: true }
+            );
+
+        }
+
+
+        /* SUCCESS FEEDBACK */
+
+        label.textContent = 'Added to cart';
+
+        window.setTimeout(() => {
+
+            label.textContent = 'Add to cart';
+
+            button.disabled = false;
+
+        }, 1200);
+
+
+    } catch (error) {
+
+        label.textContent = 'Add to cart';
+
+        button.disabled = false;
+
+        alert(
+            'Could not add the item to your cart: ' +
+            error.message
+        );
+
+    }
+
 });
