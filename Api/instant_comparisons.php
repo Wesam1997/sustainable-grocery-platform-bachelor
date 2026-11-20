@@ -74,7 +74,7 @@ final class FlashFoodInstantComparisons
 
         $facts = ['available' => false, 'note' => 'A comparison requires a recorded weight matching the food reference.'];
 
-        $basis = (string)($metrics['unit'] ?? '');
+        $basis = (string)($metrics['basis'] ?? '');
 
         if (!empty($metrics['package']['available'])) {
 
@@ -794,13 +794,18 @@ final class FlashFoodInstantComparisons
             'text' => trim($text),
 
         ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE);
-
         $temp = tempnam($this->directory, 'write-');
 
         if ($temp === false) {
 
             throw new RuntimeException('Cannot create cache file.');
 
+        }
+
+        // Allow Apache to read the generated explanation.
+        if (!chmod($temp, 0640)) {
+            @unlink($temp);
+            throw new RuntimeException('Cannot set cache file permissions.');
         }
 
         try {

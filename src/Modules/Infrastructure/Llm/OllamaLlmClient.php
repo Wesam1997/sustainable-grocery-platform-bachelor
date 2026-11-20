@@ -90,7 +90,10 @@ You write concise, accurate climate-impact equivalence explanations for a grocer
 PHP has already calculated the values and selected the comparison. Never calculate or invent numbers.
 
 Return ONLY a JSON object with exactly two fields: "comparison_key" and "explanation".
-The explanation must be ONE complete English sentence under 240 characters, ending with a period.
+The explanation must be ONE short, complete English sentence, ideally 12–18 words and under 130 characters, ending with a period.
+Avoid repetition, unnecessary adjectives, and repeating the same activity or unit.
+Prefer the pattern: "[subject_phrase] has a climate impact comparable to [reference activity and exact supplied amount]."
+All mandatory rules below take priority over the preferred word count and length.
 
 MANDATORY:
 1. Begin the sentence with the exact supplied subject_phrase, including its capitalization.
@@ -107,6 +110,13 @@ The subject_phrase is not optional. "The food product" is NOT an acceptable subs
 PROMPT;
 
         $systemPrompt .= "\n\n" . $activityInstruction;
+
+        $systemPrompt .= "\n\nSHORT COMPARISON FORMAT:\n" . match ($key) {
+            'car' => 'Use this sentence structure: [subject_phrase] has an estimated climate impact comparable to driving [amount] km by car.',
+            'shower' => 'Use this sentence structure: [subject_phrase] has an estimated climate impact comparable to taking a shower for [amount] minutes.',
+            'phone' => 'Use this sentence structure: [subject_phrase] has an estimated climate impact comparable to charging a phone [amount] times.',
+        };
+
 
         $promptData = [
             'comparison_key' => $key,
