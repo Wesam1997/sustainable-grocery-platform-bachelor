@@ -135,8 +135,6 @@ try {
 
     $user = $users->findForLogin($email);
 
-    // Use user ID when available to prevent
-    // alternative email spelling from bypassing limits
     $accountKey = $user
         ? 'user:' . $user['id']
         : 'email:' . $email;
@@ -176,6 +174,19 @@ try {
     }
 
     // ==========================================
+    // VERIFY EMAIL ADDRESS
+    // ==========================================
+
+    if (empty($user['email_verified_at'])) {
+        loginResponse(
+            403,
+            false,
+            'Please verify your email before logging in. '
+            . 'Check your inbox for the verification link.'
+        );
+    }
+
+    // ==========================================
     // CREATE LOGIN SESSION
     // ==========================================
 
@@ -206,7 +217,6 @@ try {
 
 } catch (Throwable $exception) {
 
-    // Log server errors without exposing details
     if (class_exists('SystemLogger')) {
         (new SystemLogger())->error(
             'user.login_failed',

@@ -1,0 +1,867 @@
+:root {
+    --about-cream: #fffaf1;
+    --about-yellow: #ffd15b;
+    --about-mint-light: #afeede;
+    --about-mint: #82dfc9;
+    --about-green: #216f45;
+    --about-green-dark: #174d32;
+    --about-text: #173c2a;
+    --about-page-background: #f7f8f4;
+}
+
+.about-page {
+    margin: 0;
+    background: var(--about-page-background);
+    color: var(--about-text);
+}
+
+.about-main {
+    width: min(1380px, calc(100% - 32px));
+    margin: 18px auto 42px;
+    overflow: hidden;
+
+    border-radius: 24px;
+    background: var(--about-cream);
+
+    box-shadow:
+        0 16px 42px
+        rgba(25, 55, 31, 0.09);
+}
+
+/* =========================================
+   HERO
+   ========================================= */
+
+.about-hero {
+    min-height: 390px;
+
+    display: flex;
+    align-items: center;
+
+    overflow: hidden;
+
+    background-color: var(--about-cream);
+
+    background-image:
+        linear-gradient(
+            90deg,
+            rgba(255, 250, 241, 1) 0%,
+            rgba(255, 250, 241, 0.97) 32%,
+            rgba(255, 250, 241, 0.75) 48%,
+            rgba(255, 250, 241, 0.12) 77%
+        ),
+        url("Images/hero.jpg");
+
+    background-position: center right;
+    background-size: cover;
+}
+
+.about-hero-copy {
+    width: 660px;
+    max-width: calc(100% - 52px);
+
+    margin-left: 6%;
+    padding: 76px 0 82px;
+}
+
+.about-hero h1 {
+    margin: 0;
+
+    color: var(--about-green-dark);
+
+    font-size: clamp(52px, 5.7vw, 82px);
+    font-weight: 900;
+    line-height: 0.92;
+    letter-spacing: -3.8px;
+}
+
+.about-hero h1 span {
+    position: relative;
+    z-index: 1;
+
+    display: table;
+
+    margin-top: 14px;
+    padding: 1px 19px 9px;
+}
+
+.about-hero h1 span::before {
+    content: "";
+
+    position: absolute;
+    z-index: -1;
+    inset: 3px -2px 1px;
+
+    border-radius:
+        999px 70% 999px 75%;
+
+    background: var(--about-yellow);
+
+    transform: rotate(-1.5deg);
+}
+
+.about-hero p {
+    max-width: 610px;
+
+    margin: 29px 0 0;
+
+    color: #294b3b;
+
+    font-size: clamp(16px, 1.55vw, 22px);
+    font-weight: 650;
+    line-height: 1.5;
+}
+
+/* =========================================
+   CO2E PLAYGROUND
+   ========================================= */
+
+.co2-playground {
+    position: relative;
+
+    padding: 72px 5% 54px;
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--about-mint-light) 0%,
+            var(--about-mint) 54%,
+            #a6ead8 100%
+        );
+}
+
+.co2-playground::before {
+    content: "";
+
+    position: absolute;
+    top: -37px;
+    right: -3%;
+    left: -3%;
+
+    height: 72px;
+
+    border-radius: 50%;
+    background: var(--about-mint-light);
+}
+
+.playground-heading {
+    position: relative;
+    z-index: 1;
+
+    margin-bottom: 29px;
+}
+
+.section-kicker {
+    display: block;
+
+    margin-bottom: 10px;
+
+    color: var(--about-green);
+
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.playground-heading h2 {
+    margin: 0;
+
+    color: var(--about-green-dark);
+
+    font-size: clamp(38px, 4.3vw, 62px);
+    font-weight: 900;
+    line-height: 1.03;
+    letter-spacing: -2.3px;
+}
+
+.playground-heading p {
+    margin: 12px 0 0;
+
+    color: #214c3a;
+
+    font-size: clamp(16px, 1.6vw, 22px);
+    line-height: 1.5;
+}
+
+/* =========================================
+   PLAYGROUND PANEL
+   ========================================= */
+
+.playground-panel {
+    position: relative;
+    z-index: 1;
+
+    display: grid;
+
+    grid-template-columns:
+        minmax(0, 1.7fr)
+        minmax(320px, 0.85fr);
+
+    overflow: hidden;
+
+    border:
+        1px solid rgba(23, 77, 50, 0.15);
+    border-radius: 28px;
+
+    background:
+        rgba(255, 255, 255, 0.17);
+
+    box-shadow:
+        0 18px 40px
+        rgba(21, 83, 58, 0.08);
+}
+
+/* =========================================
+   CALCULATOR
+   ========================================= */
+
+.calculator-side {
+    min-width: 0;
+    padding: 42px 44px 31px;
+}
+
+.amount-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 18px;
+}
+
+.amount-heading label {
+    color: var(--about-green-dark);
+
+    font-size: clamp(20px, 2vw, 29px);
+    font-weight: 900;
+}
+
+#co2-output {
+    padding: 11px 20px;
+
+    border-radius: 999px;
+
+    background: var(--about-cream);
+    color: var(--about-green-dark);
+
+    font-size: clamp(18px, 1.8vw, 25px);
+    font-weight: 900;
+
+    white-space: nowrap;
+
+    box-shadow:
+        0 5px 15px
+        rgba(23, 77, 50, 0.08);
+}
+
+/* =========================================
+   SLIDER
+   ========================================= */
+
+.co2-slider {
+    --slider-progress: 21.2%;
+
+    width: 100%;
+    height: 36px;
+
+    margin: 28px 0 10px;
+
+    border: 0;
+    outline: 0;
+
+    background: transparent;
+
+    cursor: pointer;
+
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.co2-slider::-webkit-slider-runnable-track {
+    height: 12px;
+
+    border-radius: 999px;
+
+    background:
+        linear-gradient(
+            to right,
+            var(--about-green-dark)
+                0 var(--slider-progress),
+
+            rgba(255, 250, 241, 0.92)
+                var(--slider-progress) 100%
+        );
+}
+
+.co2-slider::-webkit-slider-thumb {
+    width: 29px;
+    height: 29px;
+
+    margin-top: -9px;
+
+    border:
+        4px solid var(--about-green-dark);
+    border-radius: 50%;
+
+    background: var(--about-cream);
+
+    box-shadow:
+        0 3px 9px
+        rgba(20, 70, 46, 0.22);
+
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.co2-slider::-moz-range-track {
+    height: 12px;
+
+    border-radius: 999px;
+
+    background:
+        rgba(255, 250, 241, 0.92);
+}
+
+.co2-slider::-moz-range-progress {
+    height: 12px;
+
+    border-radius: 999px;
+
+    background:
+        var(--about-green-dark);
+}
+
+.co2-slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+
+    border:
+        4px solid var(--about-green-dark);
+    border-radius: 50%;
+
+    background: var(--about-cream);
+}
+
+.co2-slider:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 4px;
+
+    border-radius: 999px;
+}
+
+/* =========================================
+   CAR ROUTE
+   ========================================= */
+
+.car-route {
+    width: 100%;
+    height: 190px;
+
+    display: block;
+
+    margin: 0 auto -15px;
+
+    overflow: visible;
+}
+
+.route-line {
+    fill: none;
+
+    stroke:
+        rgba(255, 255, 255, 0.34);
+    stroke-width: 8;
+    stroke-linecap: round;
+}
+
+.route-dashes {
+    fill: none;
+
+    stroke: #ffffff;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 14 15;
+}
+
+.car-shape,
+.pin-shape {
+    fill: none;
+
+    stroke: #ffffff;
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* =========================================
+   DISTANCE RESULT
+   ========================================= */
+
+.distance-result {
+    color: var(--about-green-dark);
+    text-align: center;
+}
+
+.distance-result > span {
+    position: relative;
+    z-index: 1;
+
+    display: table;
+
+    margin: 0 auto;
+    padding: 2px 17px 7px;
+
+    font-size: clamp(42px, 5vw, 68px);
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -2px;
+}
+
+.distance-result > span::before {
+    content: "";
+
+    position: absolute;
+    z-index: -1;
+    inset: 4px 0 0;
+
+    border-radius: 999px;
+
+    background: var(--about-yellow);
+
+    transform: rotate(-1deg);
+}
+
+.distance-result small {
+    display: block;
+
+    margin-top: 7px;
+
+    font-size: clamp(20px, 2.3vw, 31px);
+    font-weight: 850;
+}
+
+.reference-note {
+    max-width: 620px;
+
+    margin: 19px auto 0;
+
+    color:
+        rgba(23, 77, 50, 0.78);
+
+    font-size: 12px;
+    font-weight: 650;
+    line-height: 1.5;
+    text-align: center;
+}
+
+/* =========================================
+   DAILY TIPS
+   ========================================= */
+
+.fact-side {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 42px 36px;
+
+    border-left:
+        2px solid rgba(255, 255, 255, 0.72);
+
+    background:
+        rgba(255, 250, 241, 0.2);
+}
+
+.fact-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 10px;
+}
+
+.fact-label {
+    padding: 9px 17px;
+
+    border-radius: 999px;
+
+    background: var(--about-cream);
+    color: var(--about-green-dark);
+
+    font-size: 14px;
+    font-weight: 900;
+
+    box-shadow:
+        0 5px 15px
+        rgba(23, 77, 50, 0.07);
+}
+
+.fact-counter {
+    color:
+        rgba(23, 77, 50, 0.74);
+
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.fact-counter strong {
+    color: var(--about-green-dark);
+}
+
+.fact-side h3 {
+    margin: 30px 0 12px;
+
+    color: var(--about-green-dark);
+
+    font-size: 17px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+#climate-fact {
+    min-height: 170px;
+
+    margin: 0 0 19px;
+
+    color: var(--about-text);
+
+    font-size: clamp(19px, 1.8vw, 25px);
+    font-weight: 680;
+    line-height: 1.42;
+
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease;
+}
+
+#climate-fact.is-changing {
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+.fact-status {
+    min-height: 20px;
+
+    margin: 0 0 14px;
+
+    color:
+        rgba(23, 77, 50, 0.67);
+
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.fact-button,
+.shopping-button {
+    min-height: 50px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 20px;
+
+    border-radius: 999px;
+
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 850;
+    text-align: center;
+    text-decoration: none;
+
+    cursor: pointer;
+
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        transform 0.18s ease;
+}
+
+.fact-button {
+    margin-top: auto;
+
+    border:
+        2px solid var(--about-green-dark);
+
+    background: transparent;
+    color: var(--about-green-dark);
+}
+
+.fact-button:hover:not(:disabled) {
+    background:
+        rgba(255, 255, 255, 0.42);
+
+    transform: translateY(-1px);
+}
+
+.fact-button:disabled {
+    cursor: wait;
+    opacity: 0.55;
+}
+
+.shopping-button {
+    margin-top: 12px;
+
+    border:
+        2px solid var(--about-green-dark);
+
+    background:
+        var(--about-green-dark);
+    color: #ffffff;
+}
+
+.shopping-button:hover {
+    background: var(--about-green);
+    transform: translateY(-1px);
+}
+
+/* =========================================
+   GREEN POINTS MESSAGE
+   ========================================= */
+
+.points-message {
+    display: grid;
+
+    grid-template-columns:
+        auto minmax(0, 1fr) auto;
+
+    align-items: center;
+
+    gap: 24px;
+
+    padding: 31px 5%;
+
+    background: var(--about-cream);
+    color: var(--about-green-dark);
+}
+
+.points-icon {
+    width: 62px;
+    height: 62px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+
+    background:
+        rgba(255, 209, 91, 0.36);
+
+    color: var(--about-green-dark);
+}
+
+.points-icon svg {
+    width: 38px;
+    height: 38px;
+}
+
+.points-message span {
+    display: block;
+
+    margin-bottom: 4px;
+
+    color: var(--about-green);
+
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+}
+
+.points-message h2 {
+    margin: 0;
+
+    color: var(--about-green-dark);
+
+    font-size: clamp(22px, 2.4vw, 35px);
+    font-weight: 900;
+    line-height: 1.15;
+    letter-spacing: -1px;
+}
+
+.points-message > a {
+    min-height: 48px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0 22px;
+
+    border:
+        2px solid var(--about-green-dark);
+    border-radius: 999px;
+
+    color: var(--about-green-dark);
+
+    font-size: 14px;
+    font-weight: 850;
+    text-decoration: none;
+
+    white-space: nowrap;
+}
+
+.points-message > a:hover {
+    background: var(--about-green-dark);
+    color: #ffffff;
+}
+
+/* =========================================
+   TABLET
+   ========================================= */
+
+@media (max-width: 900px) {
+    .about-hero {
+        min-height: 370px;
+        background-position: 61% center;
+    }
+
+    .about-hero-copy {
+        width: 570px;
+    }
+
+    .playground-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .fact-side {
+        border-top:
+            2px solid
+            rgba(255, 255, 255, 0.72);
+
+        border-left: 0;
+    }
+
+    #climate-fact {
+        min-height: 0;
+    }
+
+    .points-message {
+        grid-template-columns:
+            auto minmax(0, 1fr);
+    }
+
+    .points-message > a {
+        grid-column: 1 / -1;
+
+        justify-self: start;
+
+        margin-left: 86px;
+    }
+}
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 600px) {
+    .about-main {
+        width: calc(100% - 20px);
+
+        margin-top: 10px;
+
+        border-radius: 17px;
+    }
+
+    .about-hero {
+        min-height: 430px;
+
+        align-items: flex-start;
+
+        background-position: 69% center;
+    }
+
+    .about-hero-copy {
+        max-width: none;
+
+        margin: 0;
+        padding: 55px 20px 48px;
+    }
+
+    .about-hero h1 {
+        font-size: 48px;
+        letter-spacing: -2.3px;
+    }
+
+    .about-hero p {
+        max-width: 330px;
+        font-size: 15px;
+    }
+
+    .co2-playground {
+        padding: 58px 14px 22px;
+    }
+
+    .playground-heading h2 {
+        font-size: 36px;
+        letter-spacing: -1.5px;
+    }
+
+    .playground-heading p {
+        font-size: 15px;
+    }
+
+    .playground-panel {
+        border-radius: 20px;
+    }
+
+    .calculator-side {
+        padding: 29px 20px 26px;
+    }
+
+    .amount-heading {
+        align-items: flex-start;
+        flex-direction: column;
+
+        gap: 11px;
+    }
+
+    #co2-output {
+        font-size: 18px;
+    }
+
+    .car-route {
+        height: 145px;
+        margin-bottom: 0;
+    }
+
+    .distance-result > span {
+        font-size: 43px;
+        letter-spacing: -1px;
+    }
+
+    .fact-side {
+        padding: 30px 20px;
+    }
+
+    .fact-topline {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    #climate-fact {
+        margin-bottom: 16px;
+        font-size: 19px;
+    }
+
+    .points-message {
+        grid-template-columns: 1fr;
+
+        padding: 27px 20px;
+    }
+
+    .points-icon {
+        width: 54px;
+        height: 54px;
+    }
+
+    .points-message > a {
+        grid-column: auto;
+
+        justify-self: stretch;
+
+        margin-left: 0;
+    }
+}
