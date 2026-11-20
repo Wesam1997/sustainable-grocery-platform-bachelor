@@ -1,5 +1,17 @@
 <?php
 declare(strict_types=1);
+
+// Load Composer dependencies (PHPMailer, Dotenv, etc.)
+require_once __DIR__ . '/../vendor/autoload.php';
+
+// Load environment variables from .env
+$envPath = dirname(__DIR__);
+
+if (is_file($envPath . '/.env')) {
+    $dotenv = \Dotenv\Dotenv::createImmutable($envPath);
+    $dotenv->safeLoad();
+}
+
 require_once __DIR__ . '/Config/catalog.php';
 
 /**

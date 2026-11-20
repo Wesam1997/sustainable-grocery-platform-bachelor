@@ -28,7 +28,7 @@ try {
     require_once __DIR__ . '/auth.php';
     require_once __DIR__ . '/rate_limit.php';
 
-    // Kontroller CSRF her for at returnere JSON ved fejl.
+    // Validate CSRF token
     $token = $_POST['csrf_token'] ?? '';
 
     if (
@@ -41,34 +41,35 @@ try {
             'Invalid request. Refresh the page and try again.'
         );
     }
-    // Brug IP-adressen fra serverforbindelsen.
-// Stol ikke på en IP-adresse sendt fra JavaScript.
-$ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
-if ($ip === '') {
-    respond(503, false, 'Please try again later.');
-}
+    // Rate limit registration attempts
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '';
 
-$retryAfter = takeRateLimit(
-    $conn,
-    'register-ip',
-    $ip,
-    5,
-    15 * 60
-);
+    if ($ip === '') {
+        respond(503, false, 'Please try again later.');
+    }
 
-if ($retryAfter > 0) {
-    header('Retry-After: ' . $retryAfter);
-
-    $minutes = (int) ceil($retryAfter / 60);
-
-    respond(
-        429,
-        false,
-        "Too many attempts. Try again in {$minutes} minute(s)."
+    $retryAfter = takeRateLimit(
+        $conn,
+        'register-ip',
+        $ip,
+        5,
+        15 * 60
     );
-}
 
+    if ($retryAfter > 0) {
+        header('Retry-After: ' . $retryAfter);
+
+        $minutes = (int) ceil($retryAfter / 60);
+
+        respond(
+            429,
+            false,
+            "Too many attempts. Try again in {$minutes} minute(s)."
+        );
+    }
+
+    // Read registration fields
     $name = is_string($_POST['name'] ?? null)
         ? trim($_POST['name']) : '';
 
@@ -81,17 +82,28 @@ if ($retryAfter > 0) {
     $confirm = is_string($_POST['confirm_password'] ?? null)
         ? $_POST['confirm_password'] : '';
 
+    // Validate name
     if ($name === '' || mb_strlen($name, 'UTF-8') > 100) {
-        respond(422, false, 'Enter a name between 1 and 100 characters.');
+        respond(
+            422,
+            false,
+            'Enter a name between 1 and 100 characters.'
+        );
     }
 
+    // Validate email
     if (
         strlen($email) > 254
         || !filter_var($email, FILTER_VALIDATE_EMAIL)
     ) {
-        respond(422, false, 'Enter a valid email address.');
+        respond(
+            422,
+            false,
+            'Enter a valid email address.'
+        );
     }
 
+    // Validate password
     if (
         mb_strlen($password, 'UTF-8') < 15
         || strlen($password) > 72
@@ -105,12 +117,98 @@ if ($retryAfter > 0) {
     }
 
     if ($password !== $confirm) {
-        respond(422, false, 'The passwords do not match.');
+        respond(
+            422,
+            false,
+            'The passwords do not match.'
+        );
     }
 
-    flashfood_application($conn)->users()->register($name, $email, $password);
+    // Validate APP_URL before creating the user.
+    // Allow HTTPS for deployed environments.
+    // Allow HTTP only for local development.
+    $appUrl = rtrim(trim($_ENV['APP_URL'] ?? ''), '/');
 
-    respond(201, true, 'Your account has been created.');
+    $scheme = parse_url($appUrl, PHP_URL_SCHEME);
+    $host = parse_url($appUrl, PHP_URL_HOST);
+
+    $isLocalHttp = $scheme === 'http'
+        && in_array(
+            $host,
+            ['localhost', '127.0.0.1'],
+            true
+        );
+
+    if (
+        !filter_var($appUrl, FILTER_VALIDATE_URL)
+        || ($scheme !== 'https' && !$isLocalHttp)
+    ) {
+        throw new RuntimeException(
+            'APP_URL is not configured.'
+        );
+    }
+
+    // Create user with email_verified_at = NULL
+    $userId = flashfood_application($conn)
+        ->users()
+        ->register($name, $email, $password);
+
+    // Create verification token
+    $verificationService =
+        new \App\Application\Services\EmailVerificationService($conn);
+
+    $verificationToken =
+        $verificationService->createToken($userId);
+
+    // Build verification link
+    $verificationUrl = $appUrl
+        . '/Api/verify_email.php?token='
+        . urlencode($verificationToken);
+
+    // Prepare email
+    $subject = 'Verify your Flash Food email';
+
+    $body = "Hello {$name},\n\n"
+        . "Welcome to Flash Food!\n\n"
+        . "Please verify your email address by opening this link:\n\n"
+        . $verificationUrl . "\n\n"
+        . "This link expires after 24 hours.\n\n"
+        . "If you did not create this account, ignore this email.\n\n"
+        . "Flash Food Team";
+
+    // Send verification email
+    $mailService =
+        new \App\Application\Services\MailService();
+
+    try {
+        $mailService->send(
+            $email,
+            $subject,
+            $body
+        );
+    } catch (Throwable $mailException) {
+        (new SystemLogger())->error(
+            'user.verification_email_failed',
+            [
+                'type' => get_class($mailException),
+                'user_id' => $userId,
+            ]
+        );
+
+        respond(
+            503,
+            false,
+            'Your account was created, but the verification email '
+            . 'could not be sent. Please contact support.'
+        );
+    }
+
+    respond(
+        201,
+        true,
+        'Account created! Please check your email to verify your account.'
+    );
+
 } catch (mysqli_sql_exception $exception) {
     if ((int) $exception->getCode() === 1062) {
         respond(
@@ -120,9 +218,30 @@ if ($retryAfter > 0) {
         );
     }
 
-    (new SystemLogger())->error('user.registration_failed', ['type' => get_class($exception)]);
-    respond(500, false, 'Something went wrong. Please try again later.');
+    (new SystemLogger())->error(
+        'user.registration_failed',
+        [
+            'type' => get_class($exception),
+        ]
+    );
+
+    respond(
+        500,
+        false,
+        'Something went wrong. Please try again later.'
+    );
+
 } catch (Throwable $exception) {
-    (new SystemLogger())->error('user.registration_failed', ['type' => get_class($exception)]);
-    respond(500, false, 'Something went wrong. Please try again later.');
+    (new SystemLogger())->error(
+        'user.registration_failed',
+        [
+            'type' => get_class($exception),
+        ]
+    );
+
+    respond(
+        500,
+        false,
+        'Something went wrong. Please try again later.'
+    );
 }
