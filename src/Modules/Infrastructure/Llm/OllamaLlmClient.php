@@ -17,24 +17,46 @@ final class OllamaLlmClient implements LlmClientInterface
     public function generateExplanation(array $input): string
     {
         $options = $input['comparison_options'] ?? [];
-        if (!is_array($options) || count($options) !== 1 || !is_array($options[0])) {
-            throw new InvalidArgumentException('Exactly one comparison option is required.');
+
+        if (
+            !is_array($options)
+            || count($options) !== 1
+            || !is_array($options[0])
+        ) {
+            throw new InvalidArgumentException(
+                'Exactly one comparison option is required.'
+            );
         }
 
         $option = $options[0];
+
         $key = (string)($option['key'] ?? '');
         $equivalence = (string)($option['equivalence'] ?? '');
         $basis = (string)($option['product_basis'] ?? '');
         $illustrative = !empty($option['is_illustrative']);
 
         if (!in_array($key, ['car', 'shower', 'phone'], true)) {
-            throw new InvalidArgumentException('Unsupported comparison key.');
+            throw new InvalidArgumentException(
+                'Unsupported comparison key.'
+            );
         }
+
         if ($equivalence === '') {
-            throw new InvalidArgumentException('Comparison equivalence is missing.');
+            throw new InvalidArgumentException(
+                'Comparison equivalence is missing.'
+            );
         }
-        if (!in_array($basis, ['per serving', 'per package', 'per box'], true)) {
-            throw new InvalidArgumentException('Unsupported product basis.');
+
+        if (
+            !in_array(
+                $basis,
+                ['per serving', 'per package', 'per box'],
+                true
+            )
+        ) {
+            throw new InvalidArgumentException(
+                'Unsupported product basis.'
+            );
         }
 
         $subject = match ($basis) {
@@ -49,75 +71,110 @@ final class OllamaLlmClient implements LlmClientInterface
             'phone' => 'charging a phone',
         };
 
+        /*
+         * Short explanation instructions.
+         *
+         * PHP calculates all values.
+         * Ollama only explains the selected comparison.
+         */
+        $systemPrompt = <<<'PROMPT'
+You write very short climate-impact comparisons for a grocery website.
+
+PHP has already calculated the climate values and selected the comparison.
+You must NEVER calculate, change, round, or invent numbers.
+
+Return ONLY a valid JSON object with exactly two fields:
+{
+  "comparison_key": "car",
+  "explanation": "One serving ≈ driving 26.0 km by car."
+}
+
+IMPORTANT RULES:
+
+1. Preserve the supplied comparison_key exactly.
+
+2. Use the exact subject_phrase:
+   - One serving
+   - This pack
+   - This box
+
+3. If is_illustrative is false, begin with subject_phrase.
+
+4. If is_illustrative is true, begin with:
+   Estimated: [subject_phrase]
+
+5. Use exactly ONE number.
+   Preserve the exact supplied amount, including decimal zeros.
+
+6. Use the ≈ symbol to express an approximate climate comparison.
+
+7. Keep the explanation under 100 characters.
+
+8. End the explanation with a period.
+
+9. Never claim that the product saves, reduces,
+   offsets, or avoids emissions.
+
+10. Never describe the product's emissions as
+    kilometres, minutes, or phone charges.
+
+11. Never add environmental facts that were not supplied.
+
+12. Never change the comparison activity.
+
+REQUIRED SENTENCE PATTERNS:
+
+CAR:
+[subject_phrase] ≈ driving [amount] km by car.
+
+SHOWER:
+[subject_phrase] ≈ showering for [amount] minutes.
+
+PHONE:
+[subject_phrase] ≈ charging a phone [amount] times.
+
+For illustrative values, add "Estimated: " before
+the subject phrase.
+
+Use the supplied number, subject, and comparison.
+Do not copy numbers from examples.
+
+Return JSON only.
+No Markdown.
+No additional explanation.
+PROMPT;
+
+        /*
+         * Additional instructions for the selected activity.
+         */
         $activityInstruction = match ($key) {
             'car' => <<<'RULE'
-CAR COMPARISON:
-- The food product has an estimated climate impact comparable to driving a petrol car.
-- Use the exact product subject given in subject_phrase as the first words.
-- Explicitly include "climate impact" or "climate footprint".
-- Say "comparable to" or "equivalent to".
-- Include "driving", "car", the supplied number, and the literal unit "km".
-- Do not write "kilometers" or "kilometres".
-- Never imply driving causes or changes the product's emissions.
-- Never describe the food product's emissions as a distance.
-- Never omit the subject phrase or replace it with "the food product".
+CAR:
+Use "driving [amount] km by car".
+The distance belongs to the car comparison,
+not to the food product.
 RULE,
+
             'shower' => <<<'RULE'
-SHOWER COMPARISON:
-- Begin with the exact subject_phrase: One serving, This pack, or This box.
-- The FOOD PRODUCT has a climate impact comparable to TAKING A SHOWER.
-- Describe the shower as an activity lasting the exact supplied number of minutes.
-- Use "taking a shower for [supplied number] minutes" as the activity phrase.
-- The product's climate impact is NOT measured in minutes.
-- Never start the sentence with "Taking a shower".
-- Never say "minutes of climate impact" or "produces minutes".
-- Never claim reductions, savings, avoided emissions, or environmental benefits.
-- Never imply showering changes the food product's emissions.
-- Correct sentence pattern (use supplied subject and number, not these examples):
-  "One serving has an estimated climate impact comparable to taking a shower for 12.3 minutes."
+SHOWER:
+Use "showering for [amount] minutes".
+The minutes describe the shower duration,
+not the product's emissions.
 RULE,
+
             'phone' => <<<'RULE'
-PHONE COMPARISON:
-- Begin with the exact subject_phrase.
-- Explain the product's estimated climate impact is comparable to charging a phone.
-- Include the exact supplied number and "times" or "charges".
-- Do not imply charging changes the food product's emissions.
+PHONE:
+Use "charging a phone [amount] times".
+The number describes phone charges,
+not the product's emissions.
 RULE,
         };
-
-        $systemPrompt = <<<'PROMPT'
-You write concise, accurate climate-impact equivalence explanations for a grocery website.
-PHP has already calculated the values and selected the comparison. Never calculate or invent numbers.
-
-Return ONLY a JSON object with exactly two fields: "comparison_key" and "explanation".
-The explanation must be ONE short, complete English sentence, ideally 12–18 words and under 130 characters, ending with a period.
-Avoid repetition, unnecessary adjectives, and repeating the same activity or unit.
-Prefer the pattern: "[subject_phrase] has a climate impact comparable to [reference activity and exact supplied amount]."
-All mandatory rules below take priority over the preferred word count and length.
-
-MANDATORY:
-1. Begin the sentence with the exact supplied subject_phrase, including its capitalization.
-2. Include the exact supplied amount and unit, preserving all trailing decimal zeros.
-3. Include exactly one number. Do not invent other quantities.
-4. Explicitly name the supplied reference activity.
-5. Express comparable climate impact, not causation, and never reverse the meaning.
-6. If is_illustrative is true, include "estimated", "illustrative", or "approximately".
-7. Do not mention unprovided environmental facts, emission reductions, or savings.
-9. Do not measure climate impact in km or minutes: those units belong to the reference activity.
-8. Preserve comparison_key exactly.
-
-The subject_phrase is not optional. "The food product" is NOT an acceptable substitute.
-PROMPT;
 
         $systemPrompt .= "\n\n" . $activityInstruction;
 
-        $systemPrompt .= "\n\nSHORT COMPARISON FORMAT:\n" . match ($key) {
-            'car' => 'Use this sentence structure: [subject_phrase] has an estimated climate impact comparable to driving [amount] km by car.',
-            'shower' => 'Use this sentence structure: [subject_phrase] has an estimated climate impact comparable to taking a shower for [amount] minutes.',
-            'phone' => 'Use this sentence structure: [subject_phrase] has an estimated climate impact comparable to charging a phone [amount] times.',
-        };
-
-
+        /*
+         * Information sent to Ollama.
+         */
         $promptData = [
             'comparison_key' => $key,
             'exact_equivalence' => $equivalence,
@@ -125,76 +182,187 @@ PROMPT;
             'subject_phrase' => $subject,
             'is_illustrative' => $illustrative,
             'reference_activity' => $activity,
-            'task' => 'Write a new natural sentence about the climate impact of the exact subject_phrase. Use the exact amount and unit. Return only JSON.',
+            'task' =>
+                'Generate one short climate comparison using '
+                . 'the required sentence pattern. '
+                . 'Use the exact supplied number and subject. '
+                . 'Return JSON only.',
         ];
 
-        $feedback = trim((string)($input['validation_feedback'] ?? ''));
+        /*
+         * Feedback if the previous response failed validation.
+         */
+        $feedback = trim(
+            (string)($input['validation_feedback'] ?? '')
+        );
+
         if ($feedback !== '') {
             $promptData['previous_invalid_explanation'] =
-                (string)($input['previous_invalid_explanation'] ?? '');
+                (string)(
+                    $input['previous_invalid_explanation'] ?? ''
+                );
+
             $promptData['validation_feedback'] = $feedback;
+
             $promptData['retry_instruction'] =
-                'The previous sentence failed validation. Write a NEW corrected sentence. ' .
-                'Fix every issue in validation_feedback. ' .
-                'The explanation MUST begin with subject_phrase exactly and use the required unit.';
+                'The previous explanation failed validation. '
+                . 'Correct all reported problems. '
+                . 'Use the required short sentence pattern. '
+                . 'Preserve the exact number and subject. '
+                . 'Return JSON only.';
         }
 
-        $prompt = json_encode($promptData, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        $prompt = json_encode(
+            $promptData,
+            JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        );
+
+        /*
+         * JSON schema ensures Ollama returns the expected structure.
+         */
         $schema = [
             'type' => 'object',
             'properties' => [
-                'comparison_key' => ['type' => 'string', 'enum' => [$key]],
-                'explanation' => ['type' => 'string'],
+                'comparison_key' => [
+                    'type' => 'string',
+                    'enum' => [$key],
+                ],
+                'explanation' => [
+                    'type' => 'string',
+                ],
             ],
-            'required' => ['comparison_key', 'explanation'],
+            'required' => [
+                'comparison_key',
+                'explanation',
+            ],
             'additionalProperties' => false,
         ];
 
-        $payload = json_encode([
-            'model' => $this->model,
-            'stream' => false,
-            'format' => $schema,
-            'system' => $systemPrompt,
-            'prompt' => $prompt,
-            'options' => ['temperature' => 0, 'num_predict' => 200],
-        ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        /*
+         * Ollama request.
+         */
+        $payload = json_encode(
+            [
+                'model' => $this->model,
+                'stream' => false,
+                'format' => $schema,
+                'system' => $systemPrompt,
+                'prompt' => $prompt,
+                'options' => [
+                    'temperature' => 0,
+                    'num_predict' => 120,
+                ],
+            ],
+            JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        );
 
+        /*
+         * Check PHP cURL availability.
+         */
         if (!function_exists('curl_init')) {
-            throw new RuntimeException('PHP cURL extension is not enabled.');
+            throw new RuntimeException(
+                'PHP cURL extension is not enabled.'
+            );
         }
+
+        /*
+         * Connect to Ollama.
+         */
         $handle = curl_init($this->url);
+
         if ($handle === false) {
-            throw new RuntimeException('Could not initialize Ollama connection.');
+            throw new RuntimeException(
+                'Could not initialize Ollama connection.'
+            );
         }
 
         try {
-            curl_setopt_array($handle, [
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $payload,
-                CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_CONNECTTIMEOUT => 5,
-                CURLOPT_TIMEOUT => 60,
-            ]);
+            curl_setopt_array(
+                $handle,
+                [
+                    CURLOPT_POST => true,
+                    CURLOPT_POSTFIELDS => $payload,
+                    CURLOPT_HTTPHEADER => [
+                        'Content-Type: application/json',
+                    ],
+                    CURLOPT_RETURNTRANSFER => true,
+                    CURLOPT_CONNECTTIMEOUT => 5,
+                    CURLOPT_TIMEOUT => 60,
+                ]
+            );
+
+            /*
+             * Send request.
+             */
             $response = curl_exec($handle);
+
             if ($response === false) {
-                throw new RuntimeException('Ollama connection failed: ' . curl_error($handle));
+                throw new RuntimeException(
+                    'Ollama connection failed: '
+                    . curl_error($handle)
+                );
             }
-            $httpCode = (int)curl_getinfo($handle, CURLINFO_HTTP_CODE);
+
+            /*
+             * Check HTTP response.
+             */
+            $httpCode = (int)curl_getinfo(
+                $handle,
+                CURLINFO_HTTP_CODE
+            );
+
             if ($httpCode < 200 || $httpCode >= 300) {
-                throw new RuntimeException('Ollama returned HTTP status ' . $httpCode);
+                throw new RuntimeException(
+                    'Ollama returned HTTP status '
+                    . $httpCode
+                );
             }
-            $decoded = json_decode($response, true, 512, JSON_THROW_ON_ERROR);
+
+            /*
+             * Decode Ollama response.
+             */
+            $decoded = json_decode(
+                $response,
+                true,
+                512,
+                JSON_THROW_ON_ERROR
+            );
+
             if (!is_array($decoded)) {
-                throw new RuntimeException('Invalid Ollama response.');
+                throw new RuntimeException(
+                    'Invalid Ollama response.'
+                );
             }
-            if (array_key_exists('done', $decoded) && $decoded['done'] !== true) {
-                throw new RuntimeException('Ollama did not complete generation.');
+
+            /*
+             * Ensure generation completed.
+             */
+            if (
+                array_key_exists('done', $decoded)
+                && $decoded['done'] !== true
+            ) {
+                throw new RuntimeException(
+                    'Ollama did not complete generation.'
+                );
             }
+
+            /*
+             * Extract generated explanation.
+             */
             $generated = $decoded['response'] ?? null;
-            if (!is_string($generated) || trim($generated) === '') {
-                throw new RuntimeException('Ollama returned an empty explanation.');
+
+            if (
+                !is_string($generated)
+                || trim($generated) === ''
+            ) {
+                throw new RuntimeException(
+                    'Ollama returned an empty explanation.'
+                );
             }
+
+            /*
+             * Return JSON response for PHP validation.
+             */
             return trim($generated);
         } finally {
             curl_close($handle);
